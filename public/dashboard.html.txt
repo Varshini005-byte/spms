@@ -1,0 +1,16 @@
+<!DOCTYPE html><html>
+<head>
+  <title>Dashboard</title>
+</head>
+<body><h2>Dashboard</h2><button onclick="getUsers()">Show Users</button>
+
+<pre id="output"></pre><script>
+async function getUsers(){
+  const res = await fetch("https://spms-ie7g.onrender.com/users");
+  const data = await res.json();
+
+  document.getElementById("output").innerText =
+    JSON.stringify(data, null, 2);
+}
+</script></body>
+</html>

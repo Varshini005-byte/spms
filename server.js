@@ -6,6 +6,7 @@ require("dotenv").config();
 const { Pool } = require("pg");
 
 const app = express();
+app.use(express.static('public'));
 
 // ✅ Middleware
 app.use(cors());

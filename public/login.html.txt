@@ -1,0 +1,26 @@
+<!DOCTYPE html><html>
+<head>
+  <title>Login</title>
+</head>
+<body><h2>Login</h2><input id="email" placeholder="Enter Email"><br><br>
+
+<button onclick="login()">Login</button>
+
+<script>
+async function login() {
+  const email = document.getElementById("email").value;
+
+  const res = await fetch("https://spms-ie7g.onrender.com/users");
+  const data = await res.json();
+
+  const user = data.find(u => u.email === email);
+
+  if(user){
+    alert("Login success");
+    window.location.href = "dashboard.html";
+  } else {
+    alert("User not found");
+  }
+}
+</script></body>
+</html>
