@@ -28,6 +28,10 @@ pool.connect()
   .then(() => console.log("Connected to DB ✅"))
   .catch(err => console.log("DB Error ❌", err));
 
+// ✅ Default route
+app.get("/", (req, res) => {
+  res.send("SPMS Backend Running 🚀");
+});
 
 
 // ================= USERS =================
