@@ -4,7 +4,7 @@ body {
   background: #f4f6f9;
 }
 
-/* Header */
+/* HEADER */
 .header {
   background: #2c3e50;
   color: white;
@@ -12,16 +12,20 @@ body {
   text-align: center;
 }
 
-/* Main Section */
+/* MAIN */
 .main {
   text-align: center;
   padding: 30px;
 }
 
-/* Register link */
+.title {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+/* REGISTER */
 .register-text {
   margin-bottom: 15px;
-  font-size: 16px;
 }
 
 .register-text span {
@@ -30,13 +34,7 @@ body {
   text-decoration: underline;
 }
 
-/* Title */
-.title {
-  margin-bottom: 30px;
-  color: #333;
-}
-
-/* Cards layout */
+/* CARDS */
 .card-container {
   display: flex;
   justify-content: center;
@@ -44,43 +42,51 @@ body {
   flex-wrap: wrap;
 }
 
-/* Card */
 .card {
   width: 220px;
   padding: 20px;
-  border-radius: 10px;
+  border-radius: 12px;
   background: white;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  text-align: center;
+  box-shadow: 0px 4px 12px rgba(0,0,0,0.15);
   transition: 0.3s;
 }
 
 .card:hover {
-  transform: translateY(-5px);
+  transform: scale(1.05);
 }
 
-/* Inputs */
+/* INPUT */
 .card input {
-  width: 100%;
+  width: 90%;
   padding: 8px;
-  margin: 6px 0;
-  border: 1px solid #ccc;
+  margin: 8px 0;
   border-radius: 5px;
+  border: 1px solid #ccc;
 }
 
-/* Buttons */
+/* BUTTON */
 .card button {
-  margin-top: 10px;
   padding: 8px;
-  width: 100%;
   border: none;
   border-radius: 5px;
   color: white;
   cursor: pointer;
+  width: 100%;
 }
 
-/* Colors */
-.student button { background: #e67e22; }
-.faculty button { background: #3498db; }
-.warden button  { background: #e74c3c; }
-.parent button  { background: #2ecc71; }
+/* COLORS */
+.student button {
+  background: orange;
+}
+
+.faculty button {
+  background: blue;
+}
+
+.warden button {
+  background: red;
+}
+
+.parent button {
+  background: green;
+}
