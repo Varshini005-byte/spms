@@ -1,0 +1,52 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f5f6fa;
+}
+
+.home {
+  text-align: center;
+  padding: 40px;
+}
+
+.title {
+  margin-bottom: 40px;
+}
+
+.card-container {
+  display: flex;
+  justify-content: center;
+  gap: 25px;
+  flex-wrap: wrap;
+}
+
+.card {
+  width: 220px;
+  padding: 25px;
+  border-radius: 12px;
+  color: white;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+  transition: 0.3s;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+/* Different colors like your screenshot */
+.student { background: #ff7f50; }
+.warden { background: #8e44ad; }
+.faculty { background: #3498db; }
+.parent  { background: #2ecc71; }
+
+button {
+  margin-top: 20px;
+  padding: 10px;
+  width: 100%;
+  border: none;
+  border-radius: 6px;
+  background: white;
+  color: black;
+  font-weight: bold;
+  cursor: pointer;
+}
