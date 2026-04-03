@@ -9,9 +9,9 @@ function App() {
       const response = await fetch("https://spms-ie7g.onrender.com/login", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password })
       });
 
       const data = await response.json();
@@ -22,6 +22,7 @@ function App() {
       } else {
         alert("Invalid login ❌");
       }
+
     } catch (error) {
       alert("Server error ⚠️");
       console.error(error);
@@ -29,46 +30,60 @@ function App() {
   };
 
   return (
-    <div
-      style={{
+    <div style={{
+      height: "100vh",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      background: "linear-gradient(to right, #667eea, #764ba2)"
+    }}>
+      <div style={{
+        background: "white",
+        padding: "40px",
+        borderRadius: "12px",
+        boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
         textAlign: "center",
-        marginTop: "100px",
-        fontFamily: "Arial",
-      }}
-    >
-      <h1>Smart Permission System 🚀</h1>
+        width: "320px"
+      }}>
+        <h2>Smart Permission System 🚀</h2>
 
-      <input
-        type="email"
-        placeholder="Enter Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        style={{ padding: "10px", margin: "10px", width: "250px" }}
-      />
-      <br />
+        <input
+          type="email"
+          placeholder="Enter Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "10px",
+            marginTop: "15px",
+            marginBottom: "10px"
+          }}
+        />
 
-      <input
-        type="password"
-        placeholder="Enter Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        style={{ padding: "10px", margin: "10px", width: "250px" }}
-      />
-      <br />
+        <input
+          type="password"
+          placeholder="Enter Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "10px",
+            marginBottom: "20px"
+          }}
+        />
 
-      <button
-        onClick={loginUser}
-        style={{
-          padding: "10px 20px",
-          backgroundColor: "blue",
-          color: "white",
-          border: "none",
-          borderRadius: "5px",
-          cursor: "pointer",
-        }}
-      >
-        Login
-      </button>
+        <button onClick={loginUser}
+          style={{
+            width: "100%",
+            padding: "10px",
+            background: "#667eea",
+            color: "white",
+            border: "none",
+            borderRadius: "6px"
+          }}>
+          Login
+        </button>
+      </div>
     </div>
   );
 }
