@@ -1,29 +1,41 @@
-import { useState } from "react";
+import React, { useState } from "react";
 
 function App() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const loginUser = async () => {
-    const response = await fetch("https://spms-ie7g.onrender.com/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ email, password })
-    });
+    try {
+      const response = await fetch("https://spms-ie7g.onrender.com/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (data.success) {
-      alert("Login successful");
-    } else {
-      alert("Invalid login");
+      if (data.success) {
+        alert("Login successful ✅");
+        window.location.href = "/dashboard";
+      } else {
+        alert("Invalid login ❌");
+      }
+    } catch (error) {
+      alert("Server error ⚠️");
+      console.error(error);
     }
   };
 
   return (
-    <div style={{ textAlign: "center", marginTop: "100px" }}>
+    <div
+      style={{
+        textAlign: "center",
+        marginTop: "100px",
+        fontFamily: "Arial",
+      }}
+    >
       <h1>Smart Permission System 🚀</h1>
 
       <input
@@ -31,16 +43,32 @@ function App() {
         placeholder="Enter Email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-      /><br /><br />
+        style={{ padding: "10px", margin: "10px", width: "250px" }}
+      />
+      <br />
 
       <input
         type="password"
         placeholder="Enter Password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-      /><br /><br />
+        style={{ padding: "10px", margin: "10px", width: "250px" }}
+      />
+      <br />
 
-      <button onClick={loginUser}>Login</button>
+      <button
+        onClick={loginUser}
+        style={{
+          padding: "10px 20px",
+          backgroundColor: "blue",
+          color: "white",
+          border: "none",
+          borderRadius: "5px",
+          cursor: "pointer",
+        }}
+      >
+        Login
+      </button>
     </div>
   );
 }
