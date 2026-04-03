@@ -6,6 +6,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+
         <Route path="/" element={<Home />} />
         <Route path="/register" element={<Register />} />
 
@@ -13,6 +14,7 @@ function App() {
         <Route path="/faculty" element={<h1>Faculty Dashboard</h1>} />
         <Route path="/warden" element={<h1>Warden Dashboard</h1>} />
         <Route path="/parent" element={<h1>Parent Dashboard</h1>} />
+
       </Routes>
     </BrowserRouter>
   );
