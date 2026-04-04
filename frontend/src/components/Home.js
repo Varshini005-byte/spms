@@ -11,17 +11,18 @@ export default function Home() {
   const LoginCard = ({ title, type, role, icon }) => {
     const [idInput, setIdInput] = useState("");
     const [passInput, setPassInput] = useState("");
-    const [subRole, setSubRole] = useState("counselor");
 
     const handleLogin = () => {
       if (idInput && passInput) {
+        // Mock data logic - The role and name will be fetched from DB in real usage
         const names = {
           student: "Varshini (Student)",
-          faculty: `Prof. Rao (${subRole.replace('_', ' ')})`,
+          faculty: "Prof. Rao (Staff)",
           warden: "Chief Warden",
           parent: "Student Parent"
         };
-        let userData = { id: idInput, name: names[role] || "User", role, sub_role: role === 'faculty' ? subRole : null };
+        
+        let userData = { id: idInput, name: names[role] || "User", role: role };
         localStorage.setItem("user", JSON.stringify(userData));
         navigate(`/${role}`);
       } else {
@@ -41,14 +42,6 @@ export default function Home() {
             <label>{role === 'parent' ? "Mobile No :" : "Password :"}</label>
             <input type="password" onChange={(e) => setPassInput(e.target.value)} />
           </div>
-
-          {role === 'faculty' && (
-            <select style={{marginTop: 5}} onChange={(e) => setSubRole(e.target.value)}>
-               <option value="counselor">Role: Counselor</option>
-               <option value="class_teacher">Role: Class Teacher</option>
-               <option value="hod">Role: HOD</option>
-            </select>
-          )}
 
           <div className="login-btn-container">
             <button className="login-btn" onClick={handleLogin}>LOGIN</button>
@@ -73,13 +66,11 @@ export default function Home() {
         </div>
         <div className="banner-links" style={{marginTop: 15}}>
            Click <span onClick={() => navigate("/register")}>here</span> to Register
-           <br/>
-           Click <span>here</span> to view the on-line payment process
         </div>
       </div>
 
       <div className="portals-grid">
-        <LoginCard title="Employee Login" type="employee" role="faculty" icon={<Briefcase size={48} color="#94a3b8" />} />
+        <LoginCard title="Faculty Login" type="employee" role="faculty" icon={<Briefcase size={48} color="#94a3b8" />} />
         <LoginCard title="Student Login" type="student" role="student" icon={<GraduationCap size={48} color="#94a3b8" />} />
         <LoginCard title="Warden Login" type="warden" role="warden" icon={<Shield size={48} color="#94a3b8" />} />
         <LoginCard title="Parent Login" type="parent" role="parent" icon={<Users size={48} color="#94a3b8" />} />
