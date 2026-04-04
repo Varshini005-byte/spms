@@ -89,7 +89,25 @@ export default function ParentDashboard() {
         <div className="scroll-content">
           <h3 className="form-title">Your Student's Requests</h3>
           {requests.map(req => (
-            <div key={req.id} className="request-form-container" style={{marginBottom: 15}}>
+            <div key={req.id} className="request-form-container" style={{marginBottom: 15, borderLeft: '5px solid var(--primary)'}}>
+              <div className="status-stepper" style={{display: 'flex', justifyContent: 'space-between', marginBottom: 20, padding: '10px', background: 'var(--bg-input)', borderRadius: 10}}>
+                {[
+                  { label: 'Coun.', status: req.status_counselor, name: req.c_name },
+                  { label: 'Tea.', status: req.status_class_teacher, name: req.t_name },
+                  { label: 'HOD.', status: req.status_hod, name: req.h_name },
+                  { label: 'Ward.', status: req.status_warden, name: req.w_name }
+                ].map((step, i) => (
+                  <div key={i} style={{textAlign: 'center', flex: 1}}>
+                    <div style={{
+                      width: 12, height: 12, borderRadius: '50%', margin: '0 auto',
+                      background: step.status === 'Approved' ? '#10b981' : step.status === 'Pending' ? '#f59e0b' : '#e2e8f0'
+                    }}></div>
+                    <div style={{fontSize: '0.6rem', fontWeight: 700, marginTop: 4, color: 'var(--text-main)'}}>{step.label}</div>
+                    {step.name && <div style={{fontSize: '0.5rem', color: 'var(--text-muted)'}}>{step.name.split(' ')[0]}</div>}
+                  </div>
+                ))}
+              </div>
+
               <div className="request-detail"><Tag size={16} /> <strong>Category:</strong> {req.category}</div>
               <div className="request-detail"><Activity size={16} /> <strong>Attendance:</strong> {req.attendance}% {req.attendance < 75 && <span style={{color: '#f59e0b', display: 'inline-flex', alignItems: 'center', gap: 4}}><AlertTriangle size={16} /> LOW</span>}</div>
               <div className="request-detail"><FileText size={16} /> <strong>Reason:</strong> {req.reason}</div>

@@ -85,6 +85,24 @@ export default function WardenDashboard() {
                     <span className="stat-label" style={{color: req.priority === 'Urgent' ? '#ef4444' : '#64748b'}}>{req.priority} PRIORITY</span>
                     {req.suspicious_flag && <span style={{color: '#ef4444', fontSize: '0.75rem', fontWeight: 700}}>⚠️ RISK</span>}
                   </div>
+
+                  <div className="status-stepper" style={{display: 'flex', justifyContent: 'space-between', marginBottom: 20, padding: '10px', background: 'var(--bg-input)', borderRadius: 10}}>
+                    {[
+                      { label: 'Coun.', status: req.status_counselor, name: req.c_name },
+                      { label: 'Tea.', status: req.status_class_teacher, name: req.t_name },
+                      { label: 'HOD', status: req.status_hod, name: req.h_name }
+                    ].map((step, i) => (
+                      <div key={i} style={{textAlign: 'center', flex: 1}}>
+                        <div style={{
+                          width: 12, height: 12, borderRadius: '50%', margin: '0 auto',
+                          background: step.status === 'Approved' ? '#10b981' : step.status === 'Pending' ? '#f59e0b' : '#e2e8f0'
+                        }}></div>
+                        <div style={{fontSize: '0.6rem', fontWeight: 700, marginTop: 4, color: 'var(--text-main)'}}>{step.label}</div>
+                        {step.name && <div style={{fontSize: '0.5rem', color: 'var(--text-muted)'}}>{step.name.split(' ')[0]}</div>}
+                      </div>
+                    ))}
+                  </div>
+
                   <div className="request-detail"><User size={16} /> <strong>Student:</strong> {req.name}</div>
                   <div className="request-detail"><Tag size={16} /> <strong>Category:</strong> {req.category}</div>
                   <div className="request-detail"><Activity size={16} /> <strong>Attendance:</strong> {req.attendance}%</div>

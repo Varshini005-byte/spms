@@ -8,40 +8,58 @@ export default function Home() {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
 
-  // Component for standard email/pass login card
+  // Component for standard ID/Pass login card
   const LoginCard = ({ title, type, role, icon }) => {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+    const [idInput, setIdInput] = useState("");
+    const [passInput, setPassInput] = useState("");
+    const [subRole, setSubRole] = useState("counselor");
 
-    const handleLogin = async () => {
-      try {
-        const res = await fetch("https://spms-ie7g.onrender.com/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password })
-        });
-        const data = await res.json();
+    const handleLogin = () => {
+      if (idInput && passInput) {
+        // Mock data logic for professional demo
+        const names = {
+          student: "Varshini (Student)",
+          faculty: `Prof. Rao (${subRole.replace('_', ' ')})`,
+          warden: "Chief Warden",
+          parent: "Student Parent"
+        };
         
-        if (data.success && data.user.role === role) {
-          localStorage.setItem("user", JSON.stringify(data.user));
-          navigate(`/${role}`);
-        } else {
-          alert(`Invalid credentials for ${title}`);
-        }
-      } catch {
-        // Fallback for local UI testing without resolving backend
-        if (email && password) navigate(`/${role}`);
+        let userData = { 
+          id: idInput, 
+          name: names[role] || "User", 
+          role: role, 
+          sub_role: role === 'faculty' ? subRole : null 
+        };
+        
+        localStorage.setItem("user", JSON.stringify(userData));
+        navigate(`/${role}`);
+      } else {
+        alert("Please enter ID and Password");
       }
     };
 
     return (
       <div className="portal-card">
-        <div className={`portal-header ${type}`}>{title}</div>
+        <div className={`portal-header ${type}`}>
+          {title}
+        </div>
         <div className="portal-body">
-          <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-          <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-          <button onClick={handleLogin}>LOGIN</button>
-          <div className="portal-icon">{icon}</div>
+          <input type="text" placeholder="College ID" value={idInput} onChange={(e) => setIdInput(e.target.value)} />
+          <input type="password" placeholder="Password" value={passInput} onChange={(e) => setPassInput(e.target.value)} />
+          
+          {role === 'faculty' && (
+            <select 
+              style={{width: '100%', padding: 12, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text-main)', marginBottom: 10}} 
+              onChange={(e) => setSubRole(e.target.value)}
+            >
+               <option value="counselor">Role: Counselor</option>
+               <option value="class_teacher">Role: Class Teacher</option>
+               <option value="hod">Role: HOD</option>
+            </select>
+          )}
+
+          <button onClick={handleLogin}>Login</button>
+          <div className="portal-icon" style={{marginTop: 15, opacity: 0.2}}>{icon}</div>
         </div>
       </div>
     );

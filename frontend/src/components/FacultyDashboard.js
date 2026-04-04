@@ -8,6 +8,7 @@ import "./StudentDashboard.css";
 export default function FacultyDashboard() {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
   const [requests, setRequests] = useState([]);
   const [showAnalytics, setShowAnalytics] = useState(false);
 
@@ -16,7 +17,8 @@ export default function FacultyDashboard() {
   }, []);
 
   const fetchRequests = () => {
-    fetch("https://spms-ie7g.onrender.com/permissions?role=faculty")
+    const subRole = user.sub_role || 'counselor'; // Default for demo
+    fetch(`https://spms-ie7g.onrender.com/permissions?role=faculty&sub_role=${subRole}`)
       .then(res => res.json())
       .then(data => { if(data.success) setRequests(data.data) })
       .catch(err => console.error(err));
@@ -27,7 +29,12 @@ export default function FacultyDashboard() {
       const res = await fetch(`https://spms-ie7g.onrender.com/permissions/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: "faculty", action })
+        body: JSON.stringify({ 
+          role: "faculty", 
+          sub_role: user.sub_role || 'counselor', 
+          action,
+          name: user.name
+        })
       });
       const data = await res.json();
       if(data.success) {
@@ -85,8 +92,26 @@ export default function FacultyDashboard() {
                     <span className="stat-label" style={{color: req.priority === 'Urgent' ? '#ef4444' : '#64748b'}}>{req.priority} PRIORITY</span>
                     {req.suspicious_flag && <span style={{color: '#ef4444', fontSize: '0.75rem', fontWeight: 700}}>⚠️ RISK</span>}
                   </div>
+                  
+                  <div className="status-stepper" style={{display: 'flex', justifyContent: 'space-between', marginBottom: 20, padding: '10px', background: 'var(--bg-input)', borderRadius: 10}}>
+                    {[
+                      { label: 'Coun.', status: req.status_counselor, name: req.c_name },
+                      { label: 'Tea.', status: req.status_class_teacher, name: req.t_name },
+                      { label: 'HOD', status: req.status_hod, name: req.h_name }
+                    ].map((step, i) => (
+                      <div key={i} style={{textAlign: 'center', flex: 1}}>
+                        <div style={{
+                          width: 12, height: 12, borderRadius: '50%', margin: '0 auto',
+                          background: step.status === 'Approved' ? '#10b981' : step.status === 'Pending' ? '#f59e0b' : '#e2e8f0'
+                        }}></div>
+                        <div style={{fontSize: '0.6rem', fontWeight: 700, marginTop: 4}}>{step.label}</div>
+                        {step.name && <div style={{fontSize: '0.5rem', color: 'var(--text-muted)'}}>{step.name.split(' ')[0]}</div>}
+                      </div>
+                    ))}
+                  </div>
+
                   <div className="request-detail"><User size={16} /> <strong>Student:</strong> {req.name}</div>
-                  <div className="request-detail"><Activity size={16} /> <strong>Attendance:</strong> {req.attendance}% {req.attendance < 75 && <span style={{color: '#f59e0b'}}>(Low)</span>}</div>
+                  <div className="request-detail"><Activity size={16} /> <strong>Attendance:</strong> {req.attendance}%</div>
                   <div className="request-detail"><FileText size={16} /> <strong>Reason:</strong> {req.reason}</div>
                   {req.attachment_url && <a href={`https://spms-ie7g.onrender.com${req.attachment_url}`} target="_blank" rel="noreferrer" style={{fontSize: '0.85rem', color: '#2563eb', textDecoration: 'none'}}>View Document</a>}
                   <div style={{marginTop: 15, display: 'flex', gap: 10}}>

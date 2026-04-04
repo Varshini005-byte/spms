@@ -97,16 +97,59 @@ export default function StudentDashboard() {
     );
   };
 
-  const renderPasses = () => (
-    <div className="passes-container">
-      <h3 className="form-title">Active Exit Passes</h3>
-      {requests.filter(r => r.final_status.includes("Approved")).map(pass => (
-        <div key={pass.id} className="request-form-container" style={{marginBottom: 20, textAlign: 'center'}}>
-          <div style={{background: '#f8fafc', padding: 20, borderRadius: 16, display: 'inline-block', marginBottom: 15}}>
-            <QRCodeCanvas value={`PASS-${pass.id}-${user.id}`} size={160} />
+  const renderMyRequests = () => (
+    <div className="scroll-content" style={{padding: 0}}>
+      <h3 className="form-title">Track My Requests</h3>
+      {requests.map(req => (
+        <div key={req.id} className="request-form-container" style={{marginBottom: 20, borderLeft: '4px solid var(--primary)'}}>
+          <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: 10}}>
+             <span style={{fontWeight: 700, fontSize: '0.9rem'}}>{req.category}</span>
+             <span style={{fontSize: '0.8rem', color: 'var(--text-muted)'}}>{new Date(req.created_at).toLocaleDateString()}</span>
           </div>
-          <h4 style={{margin: '0 0 10px 0'}}>{pass.category}</h4>
-          <p style={{fontSize: '0.85rem', color: '#64748b'}}>{pass.reason}</p>
+          
+          <div className="status-stepper" style={{display: 'flex', justifyContent: 'space-between', marginTop: 15, position: 'relative'}}>
+            {[
+              { label: 'Counsellor', status: req.status_counselor, name: req.c_name },
+              { label: 'Teacher', status: req.status_class_teacher, name: req.t_name },
+              { label: 'HOD', status: req.status_hod, name: req.h_name },
+              { label: 'Warden', status: req.status_warden, name: req.w_name }
+            ].map((step, i) => (
+              <div key={i} style={{textAlign: 'center', flex: 1, position: 'relative', zIndex: 1}}>
+                <div style={{
+                  width: 24, height: 24, borderRadius: '50%', margin: '0 auto',
+                  background: step.status === 'Approved' ? '#10b981' : step.status === 'Pending' ? '#f59e0b' : step.status === 'Rejected' ? '#ef4444' : '#e2e8f0',
+                  color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem'
+                }}>
+                  {step.status === 'Approved' ? '✓' : step.status === 'Pending' ? '...' : i+1}
+                </div>
+                <div style={{fontSize: '0.65rem', fontWeight: 700, marginTop: 4, color: 'var(--text-main)'}}>{step.label}</div>
+                {step.name && <div style={{fontSize: '0.6rem', color: 'var(--text-muted)'}}>{step.name}</div>}
+              </div>
+            ))}
+          </div>
+          
+          <div style={{marginTop: 15, padding: '10px', background: 'var(--bg-input)', borderRadius: 8, fontSize: '0.85rem'}}>
+            <strong>Final Status:</strong> 
+            <span style={{marginLeft: 8, color: req.final_status.includes('Approved') ? '#10b981' : req.final_status === 'Rejected' ? '#ef4444' : '#f59e0b'}}>
+              {req.final_status}
+            </span>
+          </div>
+        </div>
+      ))}
+      {requests.length === 0 && <p style={{textAlign: 'center', color: '#94a3b8'}}>No requests found.</p>}
+    </div>
+  );
+
+  const renderPasses = () => (
+    <div className="scroll-content" style={{padding: 0}}>
+      <h3 className="form-title">Active Exit Passes</h3>
+      {requests.filter(r => r.final_status.includes("Approved")).map(req => (
+        <div key={req.id} className="request-form-container" style={{textAlign: 'center', marginBottom: 20}}>
+          <div style={{marginBottom: 15, padding: 10, background: '#f8fafc', borderRadius: 12, display: 'inline-block'}}>
+            <QRCodeCanvas value={`ID:${req.id}-STU:${user.id}`} size={160} />
+          </div>
+          <div className="request-detail"><strong>Category:</strong> {req.category}</div>
+          <div className="request-detail"><strong>Date:</strong> {new Date(req.created_at).toLocaleDateString()}</div>
           <div className="status-badge approved">SCAN READY</div>
         </div>
       ))}
@@ -148,13 +191,19 @@ export default function StudentDashboard() {
 
         <div className="scroll-content">
           {activeView === "Dashboard" && renderDashboardCards()}
+          {activeView === "My Requests" && (
+            <>
+              <button className="back-btn" onClick={() => setActiveView("Dashboard")}><ArrowLeft size={16}/> Back</button>
+              {renderMyRequests()}
+            </>
+          )}
           {activeView === "My Passes" && (
             <>
               <button className="back-btn" onClick={() => setActiveView("Dashboard")}><ArrowLeft size={16}/> Back</button>
               {renderPasses()}
             </>
           )}
-          {activeView !== "Dashboard" && activeView !== "My Passes" && (
+          {activeView !== "Dashboard" && activeView !== "My Requests" && activeView !== "My Passes" && (
             <>
               <button className="back-btn" onClick={() => setActiveView("Dashboard")}><ArrowLeft size={16}/> Back</button>
               {renderForm()}

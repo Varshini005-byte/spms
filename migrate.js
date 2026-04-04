@@ -11,14 +11,20 @@ async function migrate() {
     console.log("Starting migrations...");
 
     // 1. Alter Users table
-    console.log("Altering users table...");
+    console.log("Altering users table for Hierarchy...");
     await pool.query(`
       ALTER TABLE users
-      ADD COLUMN IF NOT EXISTS residence_type VARCHAR(50) DEFAULT 'day_scholar';
+      ADD COLUMN IF NOT EXISTS residence_type VARCHAR(50) DEFAULT 'day_scholar',
+      ADD COLUMN IF NOT EXISTS counselor_id INTEGER,
+      ADD COLUMN IF NOT EXISTS class_teacher_id INTEGER,
+      ADD COLUMN IF NOT EXISTS hod_id INTEGER,
+      ADD COLUMN IF NOT EXISTS department VARCHAR(100),
+      ADD COLUMN IF NOT EXISTS section VARCHAR(20),
+      ADD COLUMN IF NOT EXISTS sub_role VARCHAR(50); -- 'counselor', 'class_teacher', 'hod', 'faculty'
     `);
 
     // 2. Create Permissions table
-    console.log("Creating permissions table...");
+    console.log("Creating/Updating permissions table for Audit Tracking...");
     await pool.query(`
       CREATE TABLE IF NOT EXISTS permissions (
         id SERIAL PRIMARY KEY,
@@ -26,8 +32,18 @@ async function migrate() {
         category VARCHAR(50),
         reason TEXT,
         attachment_url TEXT,
-        status_faculty VARCHAR(20) DEFAULT 'N/A',
+        status_counselor VARCHAR(20) DEFAULT 'Pending',
+        c_approved_at TIMESTAMP,
+        c_name VARCHAR(100),
+        status_class_teacher VARCHAR(20) DEFAULT 'N/A',
+        t_approved_at TIMESTAMP,
+        t_name VARCHAR(100),
+        status_hod VARCHAR(20) DEFAULT 'N/A',
+        h_approved_at TIMESTAMP,
+        h_name VARCHAR(100),
         status_warden VARCHAR(20) DEFAULT 'N/A',
+        w_approved_at TIMESTAMP,
+        w_name VARCHAR(100),
         status_parent VARCHAR(20) DEFAULT 'N/A',
         final_status VARCHAR(20) DEFAULT 'Pending',
         priority VARCHAR(20) DEFAULT 'Normal',
@@ -36,10 +52,20 @@ async function migrate() {
       );
     `);
 
-    console.log("Updating existing permissions table if missing columns...");
+    console.log("Updating existing permissions table for new columns...");
     await pool.query(`
-      ALTER TABLE permissions ADD COLUMN IF NOT EXISTS priority VARCHAR(20) DEFAULT 'Normal';
-      ALTER TABLE permissions ADD COLUMN IF NOT EXISTS suspicious_flag BOOLEAN DEFAULT FALSE;
+      ALTER TABLE permissions 
+      ADD COLUMN IF NOT EXISTS status_counselor VARCHAR(20) DEFAULT 'Pending',
+      ADD COLUMN IF NOT EXISTS c_approved_at TIMESTAMP,
+      ADD COLUMN IF NOT EXISTS c_name VARCHAR(100),
+      ADD COLUMN IF NOT EXISTS status_class_teacher VARCHAR(20) DEFAULT 'N/A',
+      ADD COLUMN IF NOT EXISTS t_approved_at TIMESTAMP,
+      ADD COLUMN IF NOT EXISTS t_name VARCHAR(100),
+      ADD COLUMN IF NOT EXISTS status_hod VARCHAR(20) DEFAULT 'N/A',
+      ADD COLUMN IF NOT EXISTS h_approved_at TIMESTAMP,
+      ADD COLUMN IF NOT EXISTS h_name VARCHAR(100),
+      ADD COLUMN IF NOT EXISTS w_approved_at TIMESTAMP,
+      ADD COLUMN IF NOT EXISTS w_name VARCHAR(100);
     `);
 
     console.log("Migrations successfully completed!");

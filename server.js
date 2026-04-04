@@ -99,7 +99,7 @@ app.post("/permissions/request", upload.single("attachment"), async (req, res) =
     let suspiciousFlag = user.attendance < 60;
 
     let finalStatus = "Pending";
-    let statusFac = "Pending", statusWar = "N/A", statusPar = "N/A";
+    let statusCoun = "Pending", statusTea = "N/A", statusHod = "N/A", statusWar = "N/A", statusPar = "N/A";
 
     // --- AUTO-APPROVAL LOGIC ---
     const autoApproveKeywords = ["lunch", "snack", "canteen"];
@@ -107,28 +107,29 @@ app.post("/permissions/request", upload.single("attachment"), async (req, res) =
 
     if (user.attendance < 75 && !isShortOuting) {
       finalStatus = "Rejected (Low Attendance)";
-      statusFac = "Rejected";
+      statusCoun = "Rejected";
     } else if (isShortOuting) {
       finalStatus = "Approved (Auto)";
-      statusFac = "Approved";
+      statusCoun = "Approved"; statusTea = "Approved"; statusHod = "Approved";
       statusWar = isHosteler ? "Approved" : "N/A";
       statusPar = "N/A";
     } else {
        if (category === "Health") {
-          if (isHosteler) { statusFac = "N/A"; statusWar = "Pending"; statusPar = "Pending"; } 
-          else { statusFac = "Pending"; statusPar = "Pending"; }
+          if (isHosteler) { statusCoun = "N/A"; statusTea = "N/A"; statusHod = "N/A"; statusWar = "Pending"; statusPar = "Pending"; } 
+          else { statusCoun = "Pending"; statusPar = "Pending"; }
        } else if (category === "Event In") {
-          statusFac = "Pending";
-       } else if (category === "Event Out" || category === "Others") {
-          if (isHosteler) { statusFac = "Pending"; statusWar = "Pending"; statusPar = "Pending"; } 
-          else { statusFac = "Pending"; statusPar = "Pending"; }
+          statusCoun = "Pending";
+       } else {
+          statusCoun = "Pending";
+          if (isHosteler) { statusWar = "Pending"; statusPar = "Pending"; } 
+          else { statusPar = "Pending"; }
        }
     }
 
     await pool.query(
-      `INSERT INTO permissions (student_id, category, reason, attachment_url, status_faculty, status_warden, status_parent, final_status, priority, suspicious_flag)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-      [student_id, category, reason, attachmentUrl, statusFac, statusWar, statusPar, finalStatus, priority, suspiciousFlag]
+      `INSERT INTO permissions (student_id, category, reason, attachment_url, status_counselor, status_class_teacher, status_hod, status_warden, status_parent, final_status, priority, suspicious_flag)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+      [student_id, category, reason, attachmentUrl, statusCoun, statusTea, statusHod, statusWar, statusPar, finalStatus, priority, suspiciousFlag]
     );
     res.json({ success: true, autoApproved: isShortOuting });
   } catch (err) {
@@ -152,14 +153,17 @@ app.get("/permissions", async (req, res) => {
        queryStr += ` WHERE p.student_id = $1 ORDER BY p.created_at DESC`;
        values = [id];
     } else if (role === 'faculty') {
-       queryStr += ` WHERE p.status_faculty = 'Pending' ORDER BY p.priority DESC, p.created_at DESC`;
+       const subRole = req.query.sub_role;
+       if (subRole === 'counselor') queryStr += ` WHERE p.status_counselor = 'Pending'`;
+       else if (subRole === 'class_teacher') queryStr += ` WHERE p.status_class_teacher = 'Pending'`;
+       else if (subRole === 'hod') queryStr += ` WHERE p.status_hod = 'Pending'`;
+       queryStr += ` ORDER BY p.priority DESC, p.created_at DESC`;
     } else if (role === 'warden') {
-       queryStr += ` WHERE p.status_warden = 'Pending' AND p.status_faculty IN ('N/A', 'Approved') ORDER BY p.priority DESC, p.created_at DESC`;
+       queryStr += ` WHERE p.status_warden = 'Pending' AND p.status_hod IN ('N/A', 'Approved') ORDER BY p.priority DESC, p.created_at DESC`;
     } else if (role === 'parent') {
-       queryStr += ` WHERE p.status_parent = 'Pending' AND p.student_id = $1 AND p.status_faculty IN ('N/A', 'Approved') AND p.status_warden IN ('N/A', 'Approved') ORDER BY p.created_at DESC`;
+       queryStr += ` WHERE p.status_parent = 'Pending' AND p.student_id = $1 AND p.status_hod IN ('N/A', 'Approved') AND p.status_warden IN ('N/A', 'Approved') ORDER BY p.created_at DESC`;
        values = [id];
     } else if (role === 'admin') {
-       // Fetch everything for Analytics
        queryStr += ` ORDER BY p.created_at DESC`;
     }
 
@@ -173,35 +177,56 @@ app.get("/permissions", async (req, res) => {
 
 app.put("/permissions/:id", async (req, res) => {
   const permId = req.params.id;
-  const { role, action } = req.body; 
+  const { role, sub_role, action, name } = req.body; 
   try {
      const permRes = await pool.query("SELECT * FROM permissions WHERE id=$1", [permId]);
      if (permRes.rows.length === 0) return res.json({ success: false });
-     const perm = permRes.rows[0];
+     const p = permRes.rows[0];
 
-     let newStatusFac = perm.status_faculty;
-     let newStatusWar = perm.status_warden;
-     let newStatusPar = perm.status_parent;
+     let q = "UPDATE permissions SET ";
+     let vals = [];
+     let idx = 1;
 
-     if (role === 'faculty') newStatusFac = action;
-     else if (role === 'warden') newStatusWar = action;
-     else if (role === 'parent') newStatusPar = action;
-
-     let newFinal = "Pending";
      if (action === 'Rejected') {
-        newFinal = "Rejected";
+        q += `final_status='Rejected', status_counselor='Rejected' WHERE id=$${idx}`;
+        vals.push(permId);
      } else {
-        const facOk = (newStatusFac === 'N/A' || newStatusFac === 'Approved');
-        const warOk = (newStatusWar === 'N/A' || newStatusWar === 'Approved');
-        const parOk = (newStatusPar === 'N/A' || newStatusPar === 'Approved');
-        if (facOk && warOk && parOk) newFinal = "Approved";
+        // Approval Logic
+        if (sub_role === 'counselor') {
+           q += `status_counselor='Approved', c_name=$${idx++}, c_approved_at=NOW(), status_class_teacher='Pending' WHERE id=$${idx}`;
+           vals.push(name, permId);
+        } else if (sub_role === 'class_teacher') {
+           q += `status_class_teacher='Approved', t_name=$${idx++}, t_approved_at=NOW(), status_hod='Pending' WHERE id=$${idx}`;
+           vals.push(name, permId);
+        } else if (sub_role === 'hod') {
+           q += `status_hod='Approved', h_name=$${idx++}, h_approved_at=NOW() WHERE id=$${idx}`;
+           vals.push(name, permId);
+        } else if (role === 'warden') {
+           q += `status_warden='Approved', w_name=$${idx++}, w_approved_at=NOW() WHERE id=$${idx}`;
+           vals.push(name, permId);
+        } else if (role === 'parent') {
+           q += `status_parent='Approved' WHERE id=$${idx}`;
+           vals.push(permId);
+        }
      }
 
-     await pool.query(
-        `UPDATE permissions SET status_faculty=$1, status_warden=$2, status_parent=$3, final_status=$4 WHERE id=$5`,
-        [newStatusFac, newStatusWar, newStatusPar, newFinal, permId]
-     );
-     res.json({ success: true, finalStatus: newFinal });
+     await pool.query(q, vals);
+
+     // Check if Final Approval is reached
+     const check = await pool.query("SELECT * FROM permissions WHERE id=$1", [permId]);
+     const up = check.rows[0];
+     if (up.final_status === 'Pending') {
+        const cOk = (up.status_counselor === 'N/A' || up.status_counselor === 'Approved');
+        const tOk = (up.status_class_teacher === 'N/A' || up.status_class_teacher === 'Approved');
+        const hOk = (up.status_hod === 'N/A' || up.status_hod === 'Approved');
+        const wOk = (up.status_warden === 'N/A' || up.status_warden === 'Approved');
+        const pOk = (up.status_parent === 'N/A' || up.status_parent === 'Approved');
+        if (cOk && tOk && hOk && wOk && pOk) {
+           await pool.query("UPDATE permissions SET final_status='Approved' WHERE id=$1", [permId]);
+        }
+     }
+
+     res.json({ success: true });
   } catch (err) {
      console.error(err);
      res.status(500).json({ success: false });
