@@ -2,53 +2,54 @@
 body { margin: 0; padding: 0; background-color: #f1f5f9; color: #1e293b; }
 
 .home-container {
-  max-width: 1000px; margin: 20px auto; background: white; min-height: 90vh;
-  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.1); border-radius: 12px; overflow: hidden;
+  max-width: 1000px; margin: 20px auto; background: var(--bg-card); min-height: 90vh;
+  box-shadow: var(--shadow); border-radius: 12px; overflow: hidden; border: 1px solid var(--border);
 }
 
 .banner-section {
-  background: white; padding: 20px; text-align: center; border-bottom: 2px solid #e2e8f0;
+  background: var(--bg-nav); padding: 25px; text-align: center; border-bottom: 2px solid var(--border);
 }
-.banner-section h1 { font-size: 1.5rem; margin: 10px 0; font-weight: 800; color: #334155; }
-.banner-links { font-size: 0.9rem; margin-top: 10px; color: #64748b; }
-.banner-links span { color: #2563eb; font-weight: 600; cursor: pointer; text-decoration: underline; margin-left: 5px; }
+.banner-section h1 { font-size: 1.8rem; margin: 0; font-weight: 800; color: var(--text-main); letter-spacing: -0.5px; }
+.banner-links { font-size: 0.9rem; margin-top: 10px; color: var(--text-muted); }
+.banner-links span { color: var(--primary); font-weight: 600; cursor: pointer; text-decoration: underline; margin-left: 5px; }
 
 .portals-grid {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 15px; padding: 25px; background: #fafafa;
+  gap: 20px; padding: 30px; background: var(--bg-app);
 }
 
 .portal-card {
-  background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-  border: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden;
-  transition: transform 0.2s ease; position: relative;
+  background: var(--bg-card); border-radius: 12px; box-shadow: var(--shadow);
+  border: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden;
+  transition: transform 0.2s ease, border-color 0.2s ease; position: relative;
 }
-.portal-card:hover { transform: translateY(-3px); }
+.portal-card:hover { transform: translateY(-4px); border-color: var(--primary); }
 
 .portal-header {
   height: 60px; display: flex; align-items: center; justify-content: center;
   color: white; font-weight: 700; font-size: 1.1rem; letter-spacing: 0.5px;
 }
-.portal-header.employee { background-color: #9c27b0; }
-.portal-header.student { background-color: #ff9800; }
-.portal-header.warden { background-color: #4caf50; }
-.portal-header.parent { background-color: #03a9f4; }
+.portal-header.employee { background-color: #8b5cf6; }
+.portal-header.student { background-color: #f59e0b; }
+.portal-header.warden { background-color: #10b981; }
+.portal-header.parent { background-color: #3b82f6; }
 
-.portal-body { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+.portal-body { padding: 25px; display: flex; flex-direction: column; gap: 12px; }
 .portal-body label { font-size: 0.75rem; font-weight: 700; color: #ef4444; margin-bottom: -5px; }
 .portal-body input, .portal-body select {
-  width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 4px;
-  font-size: 0.9rem; background: white; outline: none; transition: border-color 0.2s ease;
+  width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+  font-size: 0.95rem; background: var(--bg-input); color: var(--text-main); outline: none; transition: border-color 0.2s ease;
 }
-.portal-body input:focus { border-color: #3b82f6; }
+.portal-body input:focus { border-color: var(--primary); }
 
 .login-btn-container { text-align: right; margin-top: 15px; }
 .login-btn {
-  background: linear-gradient(to bottom, #f8fafc 0%, #cbd5e1 100%);
-  color: #1e293b; border: 1px solid #94a3b8; border-radius: 6px;
-  padding: 6px 20px; font-weight: 800; font-size: 0.85rem; cursor: pointer;
+  background: var(--text-main);
+  color: var(--bg-card); border: none; border-radius: 8px;
+  padding: 8px 25px; font-weight: 700; font-size: 0.9rem; cursor: pointer;
+  transition: opacity 0.2s ease;
 }
-.login-btn:hover { background: #cbd5e1; }
+.login-btn:hover { opacity: 0.9; }
 
 .portal-avatar {
   width: 70px; height: 70px; opacity: 0.8; margin-top: 10px; align-self: flex-start;

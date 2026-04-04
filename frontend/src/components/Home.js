@@ -65,25 +65,24 @@ export default function Home() {
   return (
     <div className="home-container">
       <div className="banner-section">
-        <img src="https://bvrit.edu.in/wp-content/uploads/2021/04/bvrit_logo.png" style={{height: 60}} alt="BVRIT Logo" />
-        <h1>BVRIT - Smart Permission Management System</h1>
-        <div className="banner-links">
+        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%'}}>
+           <h1 style={{margin: 0}}>Smart Permission Management</h1>
+           <button onClick={toggleTheme} style={{background: 'var(--bg-input)', border: 'none', padding: '10px', borderRadius: '50%', cursor: 'pointer', color: 'var(--text-main)'}}>
+             {theme === 'light' ? <Moon size={20}/> : <Sun size={20}/>}
+           </button>
+        </div>
+        <div className="banner-links" style={{marginTop: 15}}>
            Click <span onClick={() => navigate("/register")}>here</span> to Register
            <br/>
            Click <span>here</span> to view the on-line payment process
         </div>
       </div>
 
-      <div className="portals-grid" style={{background: '#f8fafc'}}>
+      <div className="portals-grid">
         <LoginCard title="Employee Login" type="employee" role="faculty" icon={<Briefcase size={48} color="#94a3b8" />} />
         <LoginCard title="Student Login" type="student" role="student" icon={<GraduationCap size={48} color="#94a3b8" />} />
         <LoginCard title="Warden Login" type="warden" role="warden" icon={<Shield size={48} color="#94a3b8" />} />
         <LoginCard title="Parent Login" type="parent" role="parent" icon={<Users size={48} color="#94a3b8" />} />
-      </div>
-
-      <div className="footer-section">
-        Copyright © All rights reserved by Padmasri Dr. B V Raju Institute of Technology, Vishnupur, Narsapur, Medak<br/>
-        Powered by Webpros Solutions Pvt Ltd.,
       </div>
     </div>
   );
