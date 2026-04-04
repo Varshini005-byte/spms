@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, Activity, FileText, Tag } from "lucide-react";
+import { AlertTriangle, Activity, FileText, Tag, Sun, Moon } from "lucide-react";
+import { useTheme } from "../App";
 import "./StudentDashboard.css";
 
 export default function ParentDashboard() {
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
   const [auth, setAuth] = useState(false);
   const [requests, setRequests] = useState([]);
   const [studentIdInput, setStudentIdInput] = useState("");
@@ -49,14 +51,19 @@ export default function ParentDashboard() {
   if(!auth) {
     return (
       <div className="app-container">
-        <div className="mobile-wrapper" style={{justifyContent: 'center'}}>
+        <div className="mobile-wrapper" style={{justifyContent: 'center', background: 'var(--bg-app)'}}>
           <div className="scroll-content">
             <div className="request-form-container" style={{textAlign: 'center'}}>
                <h3 className="form-title" style={{color: '#3498db'}}>Parent Virtual Login</h3>
-               <p style={{fontSize: '0.85rem', color: '#666'}}>Enter Student ID to review their requests.</p>
-               <input type="text" placeholder="Student ID" className="custom-form" onChange={(e) => setStudentIdInput(e.target.value)} style={{width: '100%', padding: 12, margin: '15px 0', border: '1px solid #ccc', borderRadius: 8}} />
+               <p style={{fontSize: '0.85rem', color: 'var(--text-muted)'}}>Enter Student ID to review their requests.</p>
+               <input type="text" placeholder="Student ID" className="custom-form" onChange={(e) => setStudentIdInput(e.target.value)} style={{width: '100%', padding: 12, margin: '15px 0', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-input)', color: 'var(--text-main)'}} />
                <button className="submit-btn" style={{width: '100%'}} onClick={loginWithMockOTP}>Get OTP</button>
-               <button className="back-btn" style={{marginTop: 20}} onClick={() => navigate("/")}>← Back to Home</button>
+               <div style={{marginTop: 20, display: 'flex', justifyContent: 'center', gap: 10}}>
+                 <button className="logout-btn" onClick={toggleTheme}>
+                   {theme === 'light' ? <Moon size={18}/> : <Sun size={18}/>}
+                 </button>
+                 <button className="back-btn" onClick={() => navigate("/")}>← Back to Home</button>
+               </div>
             </div>
           </div>
         </div>
@@ -72,7 +79,12 @@ export default function ParentDashboard() {
             <h1 className="nav-title">BVRIT SPMS</h1>
             <p className="nav-subtitle" style={{color: '#3498db'}}>Parent Portal</p>
           </div>
-          <button className="logout-btn" onClick={() => setAuth(false)}>Logout</button>
+          <div style={{display: 'flex', gap: 10}}>
+            <button className="logout-btn" style={{background: 'var(--bg-input)'}} onClick={toggleTheme}>
+              {theme === 'light' ? <Moon size={18}/> : <Sun size={18}/>}
+            </button>
+            <button className="logout-btn" onClick={() => setAuth(false)}>Logout</button>
+          </div>
         </div>
         <div className="scroll-content">
           <h3 className="form-title">Your Student's Requests</h3>
@@ -81,14 +93,14 @@ export default function ParentDashboard() {
               <div className="request-detail"><Tag size={16} /> <strong>Category:</strong> {req.category}</div>
               <div className="request-detail"><Activity size={16} /> <strong>Attendance:</strong> {req.attendance}% {req.attendance < 75 && <span style={{color: '#f59e0b', display: 'inline-flex', alignItems: 'center', gap: 4}}><AlertTriangle size={16} /> LOW</span>}</div>
               <div className="request-detail"><FileText size={16} /> <strong>Reason:</strong> {req.reason}</div>
-              {req.attachment_url && <a href={`https://spms-ie7g.onrender.com${req.attachment_url}`} target="_blank" rel="noreferrer">View Attached Document</a>}
+              {req.attachment_url && <a href={`https://spms-ie7g.onrender.com${req.attachment_url}`} target="_blank" rel="noreferrer" style={{fontSize: '0.85rem', color: '#2563eb', textDecoration: 'none'}}>View Document</a>}
               <div style={{marginTop: 15, display: 'flex', gap: 10}}>
-                <button className="submit-btn" style={{flex: 1, padding: 10}} onClick={() => handleAction(req.id, "Approved")}>Approve</button>
-                <button className="submit-btn" style={{flex: 1, padding: 10, background: "#e74c3c"}} onClick={() => handleAction(req.id, "Rejected")}>Reject</button>
+                <button className="submit-btn" style={{flex: 1, padding: 12, fontSize: '0.85rem'}} onClick={() => handleAction(req.id, "Approved")}>Approve</button>
+                <button className="submit-btn" style={{flex: 1, padding: 12, fontSize: '0.85rem', background: "#ef4444"}} onClick={() => handleAction(req.id, "Rejected")}>Reject</button>
               </div>
             </div>
           ))}
-          {requests.length === 0 && <p style={{textAlign: 'center', color: '#666', marginTop: 40}}>No pending approval needed.</p>}
+          {requests.length === 0 && <p style={{textAlign: 'center', color: '#94a3b8', marginTop: 40}}>No pending approval needed.</p>}
         </div>
       </div>
     </div>

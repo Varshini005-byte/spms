@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, Briefcase, Shield, Users } from "lucide-react";
+import { GraduationCap, Briefcase, Shield, Users, Sun, Moon } from "lucide-react";
+import { useTheme } from "../App";
 import "./Home.css";
 
 export default function Home() {
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
 
   // Component for standard email/pass login card
   const LoginCard = ({ title, type, role, icon }) => {
@@ -21,6 +23,7 @@ export default function Home() {
         const data = await res.json();
         
         if (data.success && data.user.role === role) {
+          localStorage.setItem("user", JSON.stringify(data.user));
           navigate(`/${role}`);
         } else {
           alert(`Invalid credentials for ${title}`);
@@ -73,6 +76,9 @@ export default function Home() {
   return (
     <div className="home-container">
       <div className="hero-section">
+        <button onClick={toggleTheme} style={{position: 'absolute', top: 20, right: 20, background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', padding: 10, borderRadius: '50%', cursor: 'pointer'}}>
+          {theme === 'light' ? <Moon size={20}/> : <Sun size={20}/>}
+        </button>
         <h1>BVRIT - Smart Permission System</h1>
       </div>
 

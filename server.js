@@ -89,12 +89,30 @@ app.post("/permissions/request", upload.single("attachment"), async (req, res) =
     const user = userRes.rows[0];
     const isHosteler = user.residence_type === "hosteler";
 
+    // --- SMART LOGIC ---
+    let priority = "Normal";
+    const urgentKeywords = ["hospital", "emergency", "sick", "accident", "death", "urgent"];
+    if (urgentKeywords.some(word => reason.toLowerCase().includes(word))) {
+      priority = "Urgent";
+    }
+
+    let suspiciousFlag = user.attendance < 60;
+
     let finalStatus = "Pending";
     let statusFac = "Pending", statusWar = "N/A", statusPar = "N/A";
 
-    if (user.attendance < 75) {
+    // --- AUTO-APPROVAL LOGIC ---
+    const autoApproveKeywords = ["lunch", "snack", "canteen"];
+    const isShortOuting = category === "General Outing" && autoApproveKeywords.some(word => reason.toLowerCase().includes(word));
+
+    if (user.attendance < 75 && !isShortOuting) {
       finalStatus = "Rejected (Low Attendance)";
       statusFac = "Rejected";
+    } else if (isShortOuting) {
+      finalStatus = "Approved (Auto)";
+      statusFac = "Approved";
+      statusWar = isHosteler ? "Approved" : "N/A";
+      statusPar = "N/A";
     } else {
        if (category === "Health") {
           if (isHosteler) { statusFac = "N/A"; statusWar = "Pending"; statusPar = "Pending"; } 
@@ -108,11 +126,11 @@ app.post("/permissions/request", upload.single("attachment"), async (req, res) =
     }
 
     await pool.query(
-      `INSERT INTO permissions (student_id, category, reason, attachment_url, status_faculty, status_warden, status_parent, final_status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [student_id, category, reason, attachmentUrl, statusFac, statusWar, statusPar, finalStatus]
+      `INSERT INTO permissions (student_id, category, reason, attachment_url, status_faculty, status_warden, status_parent, final_status, priority, suspicious_flag)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      [student_id, category, reason, attachmentUrl, statusFac, statusWar, statusPar, finalStatus, priority, suspiciousFlag]
     );
-    res.json({ success: true });
+    res.json({ success: true, autoApproved: isShortOuting });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false });
@@ -134,13 +152,15 @@ app.get("/permissions", async (req, res) => {
        queryStr += ` WHERE p.student_id = $1 ORDER BY p.created_at DESC`;
        values = [id];
     } else if (role === 'faculty') {
-       queryStr += ` WHERE p.status_faculty = 'Pending' ORDER BY p.created_at DESC`;
+       queryStr += ` WHERE p.status_faculty = 'Pending' ORDER BY p.priority DESC, p.created_at DESC`;
     } else if (role === 'warden') {
-       queryStr += ` WHERE p.status_warden = 'Pending' AND p.status_faculty IN ('N/A', 'Approved') ORDER BY p.created_at DESC`;
+       queryStr += ` WHERE p.status_warden = 'Pending' AND p.status_faculty IN ('N/A', 'Approved') ORDER BY p.priority DESC, p.created_at DESC`;
     } else if (role === 'parent') {
-       // Usually tied to parent_phone/student_id. For demo, we assume id is student_id.
        queryStr += ` WHERE p.status_parent = 'Pending' AND p.student_id = $1 AND p.status_faculty IN ('N/A', 'Approved') AND p.status_warden IN ('N/A', 'Approved') ORDER BY p.created_at DESC`;
        values = [id];
+    } else if (role === 'admin') {
+       // Fetch everything for Analytics
+       queryStr += ` ORDER BY p.created_at DESC`;
     }
 
     const requests = await pool.query(queryStr, values);

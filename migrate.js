@@ -30,8 +30,16 @@ async function migrate() {
         status_warden VARCHAR(20) DEFAULT 'N/A',
         status_parent VARCHAR(20) DEFAULT 'N/A',
         final_status VARCHAR(20) DEFAULT 'Pending',
+        priority VARCHAR(20) DEFAULT 'Normal',
+        suspicious_flag BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+    `);
+
+    console.log("Updating existing permissions table if missing columns...");
+    await pool.query(`
+      ALTER TABLE permissions ADD COLUMN IF NOT EXISTS priority VARCHAR(20) DEFAULT 'Normal';
+      ALTER TABLE permissions ADD COLUMN IF NOT EXISTS suspicious_flag BOOLEAN DEFAULT FALSE;
     `);
 
     console.log("Migrations successfully completed!");
