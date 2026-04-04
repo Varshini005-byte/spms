@@ -51,8 +51,8 @@ export default function Register() {
               <label>Full Name</label>
               <input required placeholder="Your Name" onChange={(e) => setForm({ ...form, name: e.target.value })} />
               
-              <label>College Email (.edu or .ac.in)</label>
-              <input required type="email" placeholder="student@bvrit.ac.in" onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              <label>{form.role === 'student' ? 'College Email (.edu or .ac.in)' : 'Email Address'}</label>
+              <input required type="email" placeholder={form.role === 'student' ? "student@bvrit.ac.in" : "name@example.com"} onChange={(e) => setForm({ ...form, email: e.target.value })} />
               
               <label>Password</label>
               <input required type="password" placeholder="Password" onChange={(e) => setForm({ ...form, password: e.target.value })} />
