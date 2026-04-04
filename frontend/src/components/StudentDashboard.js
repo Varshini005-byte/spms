@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Home, Stethoscope, GraduationCap, Rocket, MapPin, ClipboardList, Clock, CheckCircle, XCircle } from "lucide-react";
 import "./StudentDashboard.css";
 
 export default function StudentDashboard() {
@@ -9,11 +10,11 @@ export default function StudentDashboard() {
 
   // Navigation Options identical to Screenshot #4
   const menuOptions = [
-    { name: "Dashboard", icon: "🏠" },
-    { name: "Medical Leave", icon: "🩺" },
-    { name: "Campus Events (In-Pass)", icon: "🎓" },
-    { name: "Off-Campus Events", icon: "🚀" },
-    { name: "General Outing", icon: "🚶" }
+    { name: "Dashboard", icon: <Home size={20} /> },
+    { name: "Medical Leave", icon: <Stethoscope size={20} /> },
+    { name: "Campus Events (In-Pass)", icon: <GraduationCap size={20} /> },
+    { name: "Off-Campus Events", icon: <Rocket size={20} /> },
+    { name: "General Outing", icon: <MapPin size={20} /> }
   ];
 
   const handleSubmit = (e) => {
@@ -29,28 +30,28 @@ export default function StudentDashboard() {
           <div className="stat-label">Total Requests</div>
           <div className="stat-value">0</div>
         </div>
-        <div className="stat-icon">📋</div>
+        <div className="stat-icon"><ClipboardList size={28} color="#64748b" /></div>
       </div>
       <div className="stat-card">
         <div>
           <div className="stat-label">Pending</div>
           <div className="stat-value">0</div>
         </div>
-        <div className="stat-icon">⏳</div>
+        <div className="stat-icon"><Clock size={28} color="#f59e0b" /></div>
       </div>
       <div className="stat-card">
         <div>
           <div className="stat-label">Approved</div>
           <div className="stat-value">0</div>
         </div>
-        <div className="stat-icon" style={{color: "#4cd137"}}>✅</div>
+        <div className="stat-icon"><CheckCircle size={28} color="#10b981" /></div>
       </div>
       <div className="stat-card">
         <div>
           <div className="stat-label">Rejected</div>
           <div className="stat-value">0</div>
         </div>
-        <div className="stat-icon">❌</div>
+        <div className="stat-icon"><XCircle size={28} color="#ef4444" /></div>
       </div>
 
       <div className="menu-list">

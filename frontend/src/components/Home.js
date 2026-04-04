@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { GraduationCap, Briefcase, Shield, Users } from "lucide-react";
 import "./Home.css";
 
 export default function Home() {
@@ -22,7 +23,7 @@ export default function Home() {
         if (data.success && data.user.role === role) {
           navigate(`/${role}`);
         } else {
-          alert(`Invalid credentials for ${title} ❌`);
+          alert(`Invalid credentials for ${title}`);
         }
       } catch {
         // Fallback for local UI testing without resolving backend
@@ -63,7 +64,7 @@ export default function Home() {
           <input type="text" placeholder="Mobile No" value={mobile} onChange={(e) => setMobile(e.target.value)} />
           <input type="text" placeholder="Enter OTP" value={otp} onChange={(e) => setOtp(e.target.value)} />
           <button onClick={handleLogin}>LOGIN</button>
-          <div className="portal-icon">👨‍👩‍👧</div>
+          <div className="portal-icon"><Users size={48} color="#94a3b8" /></div>
         </div>
       </div>
     );
@@ -80,9 +81,9 @@ export default function Home() {
       </div>
 
       <div className="portals-grid">
-        <LoginCard title="Student Login" type="student" role="student" icon="🎓" />
-        <LoginCard title="Faculty Login" type="faculty" role="faculty" icon="👨‍🏫" />
-        <LoginCard title="Warden Login" type="warden" role="warden" icon="👮" />
+        <LoginCard title="Student Login" type="student" role="student" icon={<GraduationCap size={48} color="#94a3b8" />} />
+        <LoginCard title="Faculty Login" type="faculty" role="faculty" icon={<Briefcase size={48} color="#94a3b8" />} />
+        <LoginCard title="Warden Login" type="warden" role="warden" icon={<Shield size={48} color="#94a3b8" />} />
         <ParentLoginCard />
       </div>
     </div>

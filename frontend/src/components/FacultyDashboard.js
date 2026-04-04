@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { AlertTriangle, User, Activity, FileText } from "lucide-react";
 import "./StudentDashboard.css"; 
 
 export default function FacultyDashboard() {
@@ -44,9 +45,9 @@ export default function FacultyDashboard() {
           <h3 className="form-title">Pending Approvals</h3>
           {requests.map(req => (
             <div key={req.id} className="request-form-container" style={{marginBottom: 15}}>
-              <p><strong>Student:</strong> {req.name} ({req.residence_type})</p>
-              <p><strong>Attendance:</strong> {req.attendance}% {req.attendance < 75 && "⚠️ LOW"}</p>
-              <p><strong>Reason:</strong> {req.reason}</p>
+              <div className="request-detail"><User size={16} /> <strong>Student:</strong> {req.name} ({req.residence_type})</div>
+              <div className="request-detail"><Activity size={16} /> <strong>Attendance:</strong> {req.attendance}% {req.attendance < 75 && <span style={{color: '#f59e0b', display: 'inline-flex', alignItems: 'center', gap: 4}}><AlertTriangle size={16} /> LOW</span>}</div>
+              <div className="request-detail"><FileText size={16} /> <strong>Reason:</strong> {req.reason}</div>
               {req.attachment_url && <a href={`https://spms-ie7g.onrender.com${req.attachment_url}`} target="_blank" rel="noreferrer">View Attachment</a>}
               <div style={{marginTop: 15, display: 'flex', gap: 10}}>
                 <button className="submit-btn" style={{flex: 1, padding: 10}} onClick={() => handleAction(req.id, "Approved")}>Approve</button>
