@@ -1,6 +1,10 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./components/Home";
 import Register from "./components/Register";
+import StudentDashboard from "./components/StudentDashboard";
+import FacultyDashboard from "./components/FacultyDashboard";
+import WardenDashboard from "./components/WardenDashboard";
+import ParentDashboard from "./components/ParentDashboard";
 
 function App() {
   return (
@@ -10,10 +14,10 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/register" element={<Register />} />
 
-        <Route path="/student" element={<h1>Student Dashboard</h1>} />
-        <Route path="/faculty" element={<h1>Faculty Dashboard</h1>} />
-        <Route path="/warden" element={<h1>Warden Dashboard</h1>} />
-        <Route path="/parent" element={<h1>Parent Dashboard</h1>} />
+        <Route path="/student" element={<StudentDashboard />} />
+        <Route path="/faculty" element={<FacultyDashboard />} />
+        <Route path="/warden" element={<WardenDashboard />} />
+        <Route path="/parent" element={<ParentDashboard />} />
 
       </Routes>
     </BrowserRouter>
