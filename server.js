@@ -139,7 +139,7 @@ app.post("/permissions/request", upload.single("attachment"), async (req, res) =
 });
 
 app.get("/permissions", async (req, res) => {
-  const { role, id } = req.query; 
+  const { role, id, view } = req.query; 
 
   try {
     let queryStr = `
@@ -154,12 +154,21 @@ app.get("/permissions", async (req, res) => {
        values = [id];
     } else if (role === 'faculty') {
        const subRole = req.query.sub_role;
-       if (subRole === 'counselor') queryStr += ` WHERE p.status_counselor = 'Pending'`;
-       else if (subRole === 'class_teacher') queryStr += ` WHERE p.status_class_teacher = 'Pending'`;
-       else if (subRole === 'hod') queryStr += ` WHERE p.status_hod = 'Pending'`;
+       if (view === 'history') {
+         queryStr += ` WHERE (p.status_counselor != 'Pending' OR p.status_class_teacher != 'Pending' OR p.status_hod != 'Pending')`;
+       } else {
+         if (subRole === 'counselor') queryStr += ` WHERE p.status_counselor = 'Pending'`;
+         else if (subRole === 'class_teacher') queryStr += ` WHERE p.status_class_teacher = 'Pending'`;
+         else if (subRole === 'hod') queryStr += ` WHERE p.status_hod = 'Pending'`;
+       }
        queryStr += ` ORDER BY p.priority DESC, p.created_at DESC`;
     } else if (role === 'warden') {
-       queryStr += ` WHERE p.status_warden = 'Pending' AND p.status_hod IN ('N/A', 'Approved') ORDER BY p.priority DESC, p.created_at DESC`;
+       if (view === 'history') {
+         queryStr += ` WHERE p.status_warden != 'Pending'`;
+       } else {
+         queryStr += ` WHERE p.status_warden = 'Pending' AND p.status_hod IN ('N/A', 'Approved')`;
+       }
+       queryStr += ` ORDER BY p.priority DESC, p.created_at DESC`;
     } else if (role === 'parent') {
        queryStr += ` WHERE p.status_parent = 'Pending' AND p.student_id = $1 AND p.status_hod IN ('N/A', 'Approved') AND p.status_warden IN ('N/A', 'Approved') ORDER BY p.created_at DESC`;
        values = [id];
@@ -188,8 +197,15 @@ app.put("/permissions/:id", async (req, res) => {
      let idx = 1;
 
      if (action === 'Rejected') {
-        q += `final_status='Rejected', status_counselor='Rejected' WHERE id=$${idx}`;
-        vals.push(permId);
+        let statusCol = "";
+        if (sub_role === 'counselor') statusCol = "status_counselor";
+        else if (sub_role === 'class_teacher') statusCol = "status_class_teacher";
+        else if (sub_role === 'hod') statusCol = "status_hod";
+        else if (role === 'warden') statusCol = "status_warden";
+        else if (role === 'parent') statusCol = "status_parent";
+
+        q += `final_status='Rejected', ${statusCol}='Rejected', rejected_by=$${idx++} WHERE id=$${idx}`;
+        vals.push(name, permId);
      } else {
         // Approval Logic
         if (sub_role === 'counselor') {

@@ -27,6 +27,7 @@ export default function StudentDashboard() {
 
   const menuOptions = [
     { name: "Dashboard", icon: <Home size={20} /> },
+    { name: "My Requests", icon: <ClipboardList size={20} /> },
     { name: "Medical Leave", icon: <Stethoscope size={20} /> },
     { name: "Campus Events", icon: <GraduationCap size={20} /> },
     { name: "Off-Campus Events", icon: <Rocket size={20} /> },
@@ -129,10 +130,14 @@ export default function StudentDashboard() {
           </div>
           
           <div style={{marginTop: 15, padding: '10px', background: 'var(--bg-input)', borderRadius: 8, fontSize: '0.85rem'}}>
-            <strong>Final Status:</strong> 
-            <span style={{marginLeft: 8, color: req.final_status.includes('Approved') ? '#10b981' : req.final_status === 'Rejected' ? '#ef4444' : '#f59e0b'}}>
-              {req.final_status}
-            </span>
+            <div style={{display: 'flex', justifyContent: 'space-between'}}>
+              <strong>Final Status:</strong> 
+              <span style={{color: req.final_status.includes('Approved') ? '#10b981' : req.final_status.includes('Rejected') ? '#ef4444' : '#f59e0b'}}>
+                {req.final_status}
+              </span>
+            </div>
+            {req.rejected_by && <div style={{marginTop: 5, fontSize: '0.75rem', color: '#ef4444'}}>Rejected by: {req.rejected_by}</div>}
+            {req.attachment_url && <div style={{marginTop: 5}}><a href={`https://spms-ie7g.onrender.com${req.attachment_url}`} target="_blank" rel="noreferrer" style={{color: '#2563eb', textDecoration: 'none'}}>View Attachment</a></div>}
           </div>
         </div>
       ))}
@@ -164,12 +169,8 @@ export default function StudentDashboard() {
         <label>Reason</label>
         <input type="text" placeholder="Brief reason for permission" required onChange={e => setForm({...form, reason: e.target.value})} />
         
-        {activeView === "Medical Leave" && (
-          <>
-            <label>Attach Proof (PDF/Image)</label>
-            <input type="file" onChange={e => setForm({...form, attachment: e.target.files[0]})} />
-          </>
-        )}
+        <label>Attach Proof (Optional for General, Required for Medical)</label>
+        <input type="file" onChange={e => setForm({...form, attachment: e.target.files[0]})} />
 
         <button type="submit" className="submit-btn" style={{marginTop: '25px'}}>Submit Request</button>
       </form>
