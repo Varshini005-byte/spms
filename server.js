@@ -6,6 +6,7 @@ const bcrypt = require("bcrypt");
 const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
+const parentOtpRoutes = require("./routes/parentOtp");
 
 const app = express();
 app.use(cors());
@@ -28,6 +29,9 @@ const pool = new Pool({
   connectionString: process.env.DB_URL,
   ssl: { rejectUnauthorized: false }
 });
+
+// Mount Parent OTP routes
+app.use(parentOtpRoutes(pool));
 
 app.get("/", (req, res) => { res.send("Backend Running 🚀"); });
 
@@ -126,12 +130,36 @@ app.post("/permissions/request", upload.single("attachment"), async (req, res) =
        }
     }
 
-    await pool.query(
+    const insertResult = await pool.query(
       `INSERT INTO permissions (student_id, category, reason, attachment_url, status_counselor, status_class_teacher, status_hod, status_warden, status_parent, final_status, priority, suspicious_flag)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+       RETURNING id`,
       [student_id, category, reason, attachmentUrl, statusCoun, statusTea, statusHod, statusWar, statusPar, finalStatus, priority, suspiciousFlag]
     );
-    res.json({ success: true, autoApproved: isShortOuting });
+
+    const newPermId = insertResult.rows[0].id;
+
+    // Auto-trigger OTP if parent approval is required
+    if (statusPar === "Pending") {
+      try {
+        const { generateOTP, sendOtpEmail } = require("./utils/otpUtils");
+        const otpDb = require("./db/parentOtpQueries");
+
+        const student = await otpDb.getStudentWithParent(pool, student_id);
+        if (student && student.parent_email) {
+          const otp = generateOTP();
+          const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+          await otpDb.createOtpRecord(pool, student_id, newPermId, student.parent_email, otp, expiresAt);
+          await sendOtpEmail(student.parent_email, otp, student.name, category);
+          console.log(`[OTP] Auto-sent to ${student.parent_email} for permission ${newPermId}`);
+        }
+      } catch (otpErr) {
+        // OTP send failure should not block permission creation
+        console.error("[OTP] Auto-send failed (non-blocking):", otpErr.message);
+      }
+    }
+
+    res.json({ success: true, autoApproved: isShortOuting, permission_id: newPermId });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false });
