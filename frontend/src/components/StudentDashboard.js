@@ -191,12 +191,13 @@ export default function StudentDashboard() {
           onChange={e => setForm({...form, reason: e.target.value})} 
         />
         
-        <label>Attach Proof (Optional for General, Required for Medical)</label>
+        <label>Attach Proof (Required for all categories)</label>
         <div style={{position: 'relative', marginTop: '8px'}}>
           <input 
             type="file" 
             id="file-upload"
             style={{display: 'none'}}
+            required
             onChange={e => setForm({...form, attachment: e.target.files[0]})} 
           />
           <label 
