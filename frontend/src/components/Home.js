@@ -12,21 +12,28 @@ export default function Home() {
     const [idInput, setIdInput] = useState("");
     const [passInput, setPassInput] = useState("");
 
-    const handleLogin = () => {
-      if (idInput && passInput) {
-        // Mock data logic - The role and name will be fetched from DB in real usage
-        const names = {
-          student: "Varshini (Student)",
-          faculty: "Prof. Rao (Staff)",
-          warden: "Chief Warden",
-          parent: "Student Parent"
-        };
+    const handleLogin = async () => {
+      try {
+        const res = await fetch("https://spms-ie7g.onrender.com/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: idInput, password: passInput })
+        });
+        const data = await res.json();
         
-        let userData = { id: idInput, name: names[role] || "User", role: role };
-        localStorage.setItem("user", JSON.stringify(userData));
-        navigate(`/${role}`);
-      } else {
-        alert("Enter Credentials");
+        if (data.success) {
+          localStorage.setItem("user", JSON.stringify(data.user));
+          // If role from DB doesn't match selected portal role, alert but allow for demo
+          if (data.user.role !== role) {
+            console.warn(`User role mismatch: logged in as ${data.user.role} through ${role} portal`);
+          }
+          navigate(`/${data.user.role}`);
+        } else {
+          alert(data.message || "Invalid credentials ❌");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Server error ⚠️");
       }
     };
 
