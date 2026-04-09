@@ -11,7 +11,9 @@ export default function StudentDashboard() {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const [activeView, setActiveView] = useState("Dashboard");
   const [requests, setRequests] = useState([]);
-  const [form, setForm] = useState({ category: "", reason: "", attachment: null });
+  const [form, setForm] = useState({ reason: "", attachment: null });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [notification, setNotification] = useState(null);
 
   useEffect(() => {
     if (!user.id) return navigate("/");
@@ -37,6 +39,9 @@ export default function StudentDashboard() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
     const formData = new FormData();
     formData.append("student_id", user.id);
     formData.append("category", activeView);
@@ -50,12 +55,23 @@ export default function StudentDashboard() {
       });
       const data = await res.json();
       if (data.success) {
-        alert(data.autoApproved ? "Auto-Approved! Check 'My Passes' ✅" : "Request Submitted ✅");
+        setNotification({
+          message: data.autoApproved ? "Auto-Approved! Check 'My Passes' ✅" : "Request Submitted Successfully ✅",
+          type: "success"
+        });
+        setForm({ reason: "", attachment: null });
         fetchHistory();
-        setActiveView("Dashboard");
+        setTimeout(() => {
+          setNotification(null);
+          setActiveView("Dashboard");
+        }, 3000);
+      } else {
+        setNotification({ message: data.message || "Submission failed ❌", type: "error" });
       }
     } catch {
-      alert("Error submitting request");
+      setNotification({ message: "Network error ⚠️", type: "error" });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -167,12 +183,42 @@ export default function StudentDashboard() {
       <h3 className="form-title">Request {activeView}</h3>
       <form onSubmit={handleSubmit} className="custom-form">
         <label>Reason</label>
-        <input type="text" placeholder="Brief reason for permission" required onChange={e => setForm({...form, reason: e.target.value})} />
+        <input 
+          type="text" 
+          placeholder="Brief reason for permission" 
+          required 
+          value={form.reason}
+          onChange={e => setForm({...form, reason: e.target.value})} 
+        />
         
         <label>Attach Proof (Optional for General, Required for Medical)</label>
-        <input type="file" onChange={e => setForm({...form, attachment: e.target.files[0]})} />
+        <div style={{position: 'relative', marginTop: '8px'}}>
+          <input 
+            type="file" 
+            id="file-upload"
+            style={{display: 'none'}}
+            onChange={e => setForm({...form, attachment: e.target.files[0]})} 
+          />
+          <label 
+            htmlFor="file-upload" 
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+              padding: '12px', background: 'var(--bg-input)', border: '2px dashed var(--border)',
+              borderRadius: '12px', cursor: 'pointer', margin: 0, color: 'var(--text-main)'
+            }}
+          >
+            <MapPin size={18} /> {form.attachment ? form.attachment.name : "Choose File"}
+          </label>
+        </div>
 
-        <button type="submit" className="submit-btn" style={{marginTop: '25px'}}>Submit Request</button>
+        <button 
+          type="submit" 
+          className="submit-btn" 
+          disabled={isSubmitting}
+          style={{marginTop: '25px', opacity: isSubmitting ? 0.7 : 1}}
+        >
+          {isSubmitting ? "Submitting..." : "Submit Request"}
+        </button>
       </form>
     </div>
   );
@@ -191,6 +237,16 @@ export default function StudentDashboard() {
         </div>
 
         <div className="scroll-content">
+          {notification && (
+            <div style={{
+              position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)',
+              zIndex: 1000, padding: '12px 24px', borderRadius: '12px',
+              background: notification.type === 'success' ? '#10b981' : '#ef4444',
+              color: 'white', fontWeight: 700, boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'
+            }}>
+              {notification.message}
+            </div>
+          )}
           {activeView === "Dashboard" && renderDashboardCards()}
           {activeView === "My Requests" && (
             <>
