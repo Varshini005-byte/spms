@@ -8,6 +8,7 @@ import "./StudentDashboard.css";
 export default function WardenDashboard() {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
   const [requests, setRequests] = useState([]);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [viewMode, setViewMode] = useState("pending"); // "pending" or "history"

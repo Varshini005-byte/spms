@@ -7,6 +7,7 @@ import "./StudentDashboard.css";
 export default function ParentDashboard() {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
   const [auth, setAuth] = useState(false);
   const [requests, setRequests] = useState([]);
   const [studentIdInput, setStudentIdInput] = useState("");
