@@ -37,36 +37,60 @@ app.get("/", (req, res) => { res.send("Backend Running 🚀"); });
 
 // ================= REGISTER =================
 app.post("/register", async (req, res) => {
-  const { name, email, password, role, residence_type } = req.body;
+  const { name, email, password, role, residence_type, roll_no, faculty_id, phone_no, parent_of_roll_no } = req.body;
 
-  if (role === 'student' && !email.endsWith(".edu") && !email.endsWith(".ac.in")) {
-    return res.json({ success: false, message: "Use official college email (.edu or .ac.in)" });
+  // Security: Check if phone number is already registered as a student to prevent misuse as parent
+  if (role === 'parent' && phone_no) {
+    try {
+      const studentCheck = await pool.query("SELECT * FROM users WHERE phone_no=$1 AND role='student'", [phone_no]);
+      if (studentCheck.rows.length > 0) {
+        return res.json({ success: false, message: "Security Alert: This phone number is registered to a student and cannot be used for parent registration." });
+      }
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   try {
-    const check = await pool.query("SELECT * FROM users WHERE email=$1", [email]);
-    if (check.rows.length > 0) return res.json({ success: false, message: "User already exists" });
+    // Check for existing user using the specific identifier based on role
+    let checkQuery = "SELECT * FROM users WHERE email=$1";
+    let checkVal = email;
+
+    if (role === 'student') { checkQuery = "SELECT * FROM users WHERE roll_no=$1"; checkVal = roll_no; }
+    else if (role === 'faculty') { checkQuery = "SELECT * FROM users WHERE faculty_id=$1"; checkVal = faculty_id; }
+    else if (role === 'warden' || role === 'parent') { checkQuery = "SELECT * FROM users WHERE phone_no=$1"; checkVal = phone_no; }
+
+    if (checkVal) {
+      const check = await pool.query(checkQuery, [checkVal]);
+      if (check.rows.length > 0) return res.json({ success: false, message: "User already exists with this identifier" });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const defaultResType = residence_type || 'day_scholar';
 
     await pool.query(
-      `INSERT INTO users (name, email, password, role, attendance, residence_type) 
-       VALUES ($1,$2,$3,$4,$5,$6)`,
-      [name, email, hashedPassword, role, 100, defaultResType]
+      `INSERT INTO users (name, email, password, role, attendance, residence_type, roll_no, faculty_id, phone_no, parent_of_roll_no) 
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+      [name, email, hashedPassword, role, 100, defaultResType, roll_no, faculty_id, phone_no, parent_of_roll_no]
     );
     res.json({ success: true });
   } catch (err) {
     console.log(err);
-    res.status(500).json({ success: false });
+    res.status(500).json({ success: false, message: "Registration failed" });
   }
 });
 
 // ================= LOGIN =================
 app.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+  const { identifier, password, role } = req.body;
   try {
-    const result = await pool.query("SELECT * FROM users WHERE email=$1", [email]);
+    let loginQuery = "SELECT * FROM users WHERE email=$1";
+    if (role === 'student') loginQuery = "SELECT * FROM users WHERE roll_no=$1";
+    else if (role === 'faculty') loginQuery = "SELECT * FROM users WHERE faculty_id=$1";
+    else if (role === 'warden') loginQuery = "SELECT * FROM users WHERE phone_no=$1";
+    else if (role === 'parent') loginQuery = "SELECT * FROM users WHERE phone_no=$1";
+
+    const result = await pool.query(loginQuery, [identifier]);
     if (result.rows.length === 0) return res.json({ success: false, message: "User not found" });
 
     const user = result.rows[0];

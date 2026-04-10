@@ -228,7 +228,7 @@ export default function StudentDashboard() {
     <div className="app-container">
       <div className="mobile-wrapper">
         <div className="top-nav">
-          <div><h1 className="nav-title">BVRIT SPMS</h1><p className="nav-subtitle">{user.name} (Student)</p></div>
+          <div><h1 className="nav-title">BVRIT SPMS</h1><p className="nav-subtitle">{user.name} ({user.roll_no})</p></div>
           <div style={{display: 'flex', gap: 10}}>
              <button className="logout-btn" style={{background: 'var(--bg-input)'}} onClick={toggleTheme}>
                {theme === 'light' ? <Moon size={18}/> : <Sun size={18}/>}

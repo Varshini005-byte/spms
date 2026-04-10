@@ -54,8 +54,8 @@ export default function WardenDashboard() {
       <div className="mobile-wrapper">
         <div className="top-nav">
           <div>
-            <h1 className="nav-title">BVRIT SPMS</h1>
-            <p className="nav-subtitle" style={{color: '#10b981'}}>Warden Portal</p>
+            <h1 className="nav-title">Warden Portal</h1>
+            <p className="nav-subtitle">{user.name} ({user.phone_no})</p>
           </div>
           <div style={{display: 'flex', gap: 10}}>
             <button className="logout-btn" style={{background: viewMode === 'history' ? '#10b981' : 'var(--bg-input)', color: viewMode === 'history' ? 'white' : 'var(--text-main)'}} onClick={() => setViewMode(viewMode === 'pending' ? 'history' : 'pending')}>

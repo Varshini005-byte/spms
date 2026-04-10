@@ -76,8 +76,8 @@ export default function ParentDashboard() {
       <div className="mobile-wrapper">
         <div className="top-nav">
           <div>
-            <h1 className="nav-title">BVRIT SPMS</h1>
-            <p className="nav-subtitle" style={{color: '#3498db'}}>Parent Portal</p>
+            <h1 className="nav-title">Parent Portal</h1>
+            <p className="nav-subtitle">{user?.name} (Parent of {user?.parent_of_roll_no})</p>
           </div>
           <div style={{display: 'flex', gap: 10}}>
             <button className="logout-btn" style={{background: 'var(--bg-input)'}} onClick={toggleTheme}>

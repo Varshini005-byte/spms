@@ -17,16 +17,12 @@ export default function Home() {
         const res = await fetch("https://spms-ie7g.onrender.com/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: idInput, password: passInput })
+          body: JSON.stringify({ identifier: idInput, password: passInput, role: role })
         });
         const data = await res.json();
         
         if (data.success) {
           localStorage.setItem("user", JSON.stringify(data.user));
-          // If role from DB doesn't match selected portal role, alert but allow for demo
-          if (data.user.role !== role) {
-            console.warn(`User role mismatch: logged in as ${data.user.role} through ${role} portal`);
-          }
           navigate(`/${data.user.role}`);
         } else {
           alert(data.message || "Invalid credentials ❌");
@@ -37,17 +33,24 @@ export default function Home() {
       }
     };
 
+    const getLabel = () => {
+      if (role === 'student') return "Roll Number :";
+      if (role === 'faculty') return "Faculty ID :";
+      if (role === 'warden' || role === 'parent') return "Phone Number :";
+      return "Login ID :";
+    };
+
     return (
       <div className="portal-card">
         <div className={`portal-header ${type}`}>{title}</div>
         <div className="portal-body">
           <div style={{display: 'flex', flexDirection: 'column', gap: 5}}>
-            <label>{role === 'parent' ? "Roll.No :" : "User Name :"}</label>
-            <input type="text" onChange={(e) => setIdInput(e.target.value)} />
+            <label>{getLabel()}</label>
+            <input type="text" placeholder={`Enter ${getLabel().replace(' :', '')}`} onChange={(e) => setIdInput(e.target.value)} />
           </div>
           <div style={{display: 'flex', flexDirection: 'column', gap: 5}}>
-            <label>{role === 'parent' ? "Mobile No :" : "Password :"}</label>
-            <input type="password" onChange={(e) => setPassInput(e.target.value)} />
+            <label>Password :</label>
+            <input type="password" placeholder="••••••••" onChange={(e) => setPassInput(e.target.value)} />
           </div>
 
           <div className="login-btn-container">

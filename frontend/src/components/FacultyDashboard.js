@@ -65,8 +65,7 @@ export default function FacultyDashboard() {
       <div className="mobile-wrapper">
         <div className="top-nav">
           <div>
-            <h1 className="nav-title">BVRIT SPMS</h1>
-            <p className="nav-subtitle" style={{color: '#6366f1'}}>Faculty Portal</p>
+            <div><h1 className="nav-title">Faculty Portal</h1><p className="nav-subtitle">{user.name} ({user.faculty_id})</p></div>
           </div>
           <div style={{display: 'flex', gap: 10}}>
             <button className="logout-btn" style={{background: 'var(--bg-input)'}} onClick={toggleTheme}>
