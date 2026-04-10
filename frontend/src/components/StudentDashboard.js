@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Home, Stethoscope, GraduationCap, Rocket, MapPin, ClipboardList, Clock, CheckCircle, XCircle, QrCode, ArrowLeft, Sun, Moon } from "lucide-react";
+import { Home, Stethoscope, GraduationCap, Rocket, MapPin, ClipboardList, Clock, CheckCircle, XCircle, QrCode, ArrowLeft, Sun, Moon, AlertTriangle } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import { useTheme } from "../App";
 import "./StudentDashboard.css";
@@ -35,6 +35,7 @@ export default function StudentDashboard() {
     { name: "Campus Events", icon: <GraduationCap size={20} /> },
     { name: "Off-Campus Events", icon: <Rocket size={20} /> },
     { name: "General Outing", icon: <MapPin size={20} /> },
+    { name: "Emergency Leave", icon: <AlertTriangle size={20} color="#ef4444" /> },
     { name: "My Passes", icon: <QrCode size={20} /> }
   ];
 
@@ -63,7 +64,7 @@ export default function StudentDashboard() {
     formData.append("student_id", user.id);
     formData.append("category", activeView);
     formData.append("reason", form.reason);
-    formData.append("is_emergency", form.isEmergency);
+    formData.append("is_emergency", activeView === "Emergency Leave" ? "true" : "false");
     if (form.attachment) formData.append("attachment", form.attachment);
 
     try {
@@ -263,19 +264,6 @@ export default function StudentDashboard() {
             }}
           >
             <MapPin size={18} /> {form.attachment ? form.attachment.name : "Choose File"}
-          </label>
-        </div>
-
-        <div style={{ marginTop: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <input 
-            type="checkbox" 
-            id="emergency-check" 
-            checked={form.isEmergency} 
-            onChange={(e) => setForm({...form, isEmergency: e.target.checked})} 
-            style={{ width: '18px', height: '18px', accentColor: '#ef4444' }}
-          />
-          <label htmlFor="emergency-check" style={{ color: '#ef4444', fontWeight: 'bold', margin: 0, fontSize: '0.85rem' }}>
-            Mark as Emergency (Direct HOD Approval)
           </label>
         </div>
 
