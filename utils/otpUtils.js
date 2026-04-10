@@ -95,7 +95,10 @@ async function sendOtpEmail(to, otp, studentName, category = "Permission") {
   };
 
   const result = await transporter.sendMail(mailOptions);
-  console.log(`[OTP] Email sent to ${to} | MessageId: ${result.messageId}`);
+  console.log(`\n-----------------------------------------`);
+  console.log(`[OTP DEBUG] Sent to: ${to}`);
+  console.log(`[OTP CODE]  👉  ${otp}  👈`);
+  console.log(`-----------------------------------------\n`);
   return result;
 }
 
