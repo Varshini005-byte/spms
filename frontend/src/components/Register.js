@@ -110,6 +110,8 @@ export default function Register() {
                   <input required type="email" placeholder="student@bvrit.ac.in" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
                   <label>Personal Phone No<RequiredStar /></label>
                   <input required type="tel" placeholder="10-digit mobile number" value={form.phone_no} onChange={(e) => setForm({ ...form, phone_no: e.target.value })} />
+                  <label>Parent Email Address<RequiredStar /></label>
+                  <input required type="email" placeholder="parent@example.com" value={form.parent_email} onChange={(e) => setForm({ ...form, parent_email: e.target.value })} />
                   <label>Residence Type<RequiredStar /></label>
                   <select style={{ padding: "12px", borderRadius: "8px", border: "1px solid #e2e8f0", outline: "none", backgroundColor: "var(--bg-input)", color: "var(--text-main)", marginBottom: "15px", width: "100%" }} value={form.residence_type} onChange={(e) => setForm({ ...form, residence_type: e.target.value })}>
                     <option value="day_scholar">Day Scholar</option>

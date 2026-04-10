@@ -37,7 +37,7 @@ app.get("/", (req, res) => { res.send("Backend Running 🚀"); });
 
 // ================= REGISTER =================
 app.post("/register", async (req, res) => {
-  const { name, email, password, role, residence_type, roll_no, faculty_id, phone_no, parent_of_roll_no } = req.body;
+  const { name, email, password, role, residence_type, roll_no, faculty_id, phone_no, parent_of_roll_no, parent_email } = req.body;
 
   // Security: Check if phone number is already registered as a student to prevent misuse as parent
   if (role === 'parent' && phone_no) {
@@ -74,9 +74,9 @@ app.post("/register", async (req, res) => {
     const cleanPhoneNo = (role === 'warden' || role === 'parent' || role === 'student' || role === 'faculty') ? phone_no : null;
 
     await pool.query(
-      `INSERT INTO users (name, email, password, role, attendance, residence_type, roll_no, faculty_id, phone_no, parent_of_roll_no) 
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-      [name, email, hashedPassword, role, 100, defaultResType, cleanRollNo, cleanFacultyId, cleanPhoneNo, parent_of_roll_no]
+      `INSERT INTO users (name, email, password, role, attendance, residence_type, roll_no, faculty_id, phone_no, parent_of_roll_no, parent_email) 
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+      [name, email, hashedPassword, role, 100, defaultResType, cleanRollNo, cleanFacultyId, cleanPhoneNo, parent_of_roll_no, parent_email]
     );
     res.json({ success: true });
   } catch (err) {
@@ -234,8 +234,9 @@ app.get("/permissions", async (req, res) => {
        }
        queryStr += ` ORDER BY p.priority DESC, p.created_at DESC`;
     } else if (role === 'parent') {
-       queryStr += ` WHERE p.status_parent = 'Pending' AND p.student_id = (SELECT id FROM users WHERE roll_no = $1 LIMIT 1) AND p.status_hod = 'Approved' AND (p.status_warden = 'N/A' OR p.status_warden = 'Approved') ORDER BY p.created_at DESC`;
-       values = [id]; // id is student's roll number entered by parent
+       // Allow parents to see the request as soon as it exists, but they can only approve when academic is done
+       queryStr += ` WHERE p.status_parent = 'Pending' AND p.student_id = (SELECT id FROM users WHERE roll_no = $1 LIMIT 1) ORDER BY p.created_at DESC`;
+       values = [id]; 
     } else if (role === 'admin') {
        queryStr += ` ORDER BY p.created_at DESC`;
     }

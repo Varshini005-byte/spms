@@ -84,7 +84,7 @@ export default function ParentDashboard() {
             <div className="request-form-container" style={{textAlign: 'center'}}>
                <h3 className="form-title" style={{color: '#3498db'}}>Parent Virtual Login</h3>
                <p style={{fontSize: '0.85rem', color: 'var(--text-muted)'}}>Enter Student Roll No to review their requests.</p>
-               <input type="text" placeholder="Roll No (e.g. 21B01...)" className="custom-form" onChange={(e) => setStudentIdInput(e.target.value)} style={{width: '100%', padding: 12, margin: '15px 0', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-input)', color: 'var(--text-main)'}} />
+               <input type="text" placeholder="Roll No (e.g. 21B01...)" className="custom-form" onChange={(e) => setStudentIdInput(e.target.value.toUpperCase())} style={{width: '100%', padding: 12, margin: '15px 0', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-input)', color: 'var(--text-main)'}} />
                <button className="submit-btn" style={{width: '100%'}} onClick={() => {
                    if(studentIdInput) {
                        setAuth(true);
