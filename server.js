@@ -75,8 +75,16 @@ app.post("/register", async (req, res) => {
     );
     res.json({ success: true });
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ success: false, message: "Registration failed" });
+    console.error("Registration Error:", err);
+    let errorMsg = "Registration failed ❌";
+    if (err.code === '23505') {
+       if (err.detail.includes('email')) errorMsg = "Email already registered ❌";
+       else if (err.detail.includes('roll_no')) errorMsg = "Roll Number already registered ❌";
+       else if (err.detail.includes('faculty_id')) errorMsg = "Faculty ID already registered ❌";
+       else if (err.detail.includes('phone_no')) errorMsg = "Phone Number already registered ❌";
+       else errorMsg = "Duplicate entry found ❌";
+    }
+    res.status(400).json({ success: false, message: errorMsg });
   }
 });
 
