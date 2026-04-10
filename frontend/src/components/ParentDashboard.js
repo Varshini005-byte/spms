@@ -20,18 +20,7 @@ export default function ParentDashboard() {
     }
   }, []);
 
-  const loginWithMockOTP = () => {
-    if(studentIdInput) {
-      alert("MOCK SMS SENT: Your OTP is 1234");
-      const otp = prompt("Enter the OTP sent to your phone:");
-      if(otp === "1234") {
-        setAuth(true);
-        fetchRequests(studentIdInput);
-      } else {
-        alert("Invalid OTP");
-      }
-    }
-  };
+  // OTP Login Bypass
 
   const fetchRequests = (id) => {
     fetch(`${API_BASE}/permissions?role=parent&id=${id}`)
@@ -41,60 +30,21 @@ export default function ParentDashboard() {
   };
 
   const handleAction = async (req, action) => {
-    if (action === "Rejected") {
-        // Just reject directly (no OTP needed for rejection usually, or up to you)
-        try {
-          const res = await fetch(`${API_BASE}/permissions/${req.id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ role: "parent", action, name: user.name })
-          });
-          const data = await res.json();
-          if(data.success) {
-            alert("Request Rejected!");
-            fetchRequests(studentIdInput);
-          }
-        } catch { alert("Error"); }
-        return;
-    }
-
-    // OTP Required for Approval
-    const otpCode = prompt("🔐 An OTP has been sent to your registered email.\n\nPlease enter the 6-digit code to Approve:");
-    if (!otpCode) return;
-
     try {
-      const res = await fetch(`${API_BASE}/parent/verify-otp`, {
-        method: "POST",
+      const res = await fetch(`${API_BASE}/permissions/${req.id}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-            student_id: req.student_id, 
-            otp: otpCode, 
-            permission_id: req.id 
-        })
+        body: JSON.stringify({ role: "parent", action, name: user?.name || "Parent" })
       });
       const data = await res.json();
       if(data.success) {
-        alert("✅ OTP Verified and Approved!");
+        alert(`Request ${action} Successfully! ✅`);
         fetchRequests(studentIdInput);
       } else {
-        alert(data.message || "Invalid OTP ❌");
+        alert(data.message || "Action failed ❌");
       }
     } catch {
       alert("Server error ⚠️");
-    }
-  };
-
-  const handleResendOtp = async (reqId, studentId) => {
-    try {
-      const res = await fetch(`${API_BASE}/parent/resend-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ student_id: studentId, permission_id: reqId })
-      });
-      const data = await res.json();
-      alert(data.message || "Failed to resend OTP ❌");
-    } catch {
-      alert("Error resending OTP ⚠️");
     }
   };
 
@@ -170,7 +120,6 @@ export default function ParentDashboard() {
               <div style={{marginTop: 15, display: 'flex', flexWrap: 'wrap', gap: 10}}>
                 <button className="submit-btn" style={{flex: 1, padding: 12, fontSize: '0.85rem', background: '#10b981'}} onClick={() => handleAction(req, "Approved")}>Approve</button>
                 <button className="submit-btn" style={{flex: 1, padding: 12, fontSize: '0.85rem', background: "#ef4444"}} onClick={() => handleAction(req, "Rejected")}>Reject</button>
-                <button className="back-btn" style={{width: '100%', padding: '8px', fontSize: '0.75rem', background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)'}} onClick={() => handleResendOtp(req.id, req.student_id)}>Send New OTP 📩</button>
               </div>
             </div>
           ))}

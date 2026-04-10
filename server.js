@@ -289,7 +289,6 @@ app.put("/permissions/:id", async (req, res) => {
            q += `status_warden='Approved', w_name=$${idx++}, w_approved_at=NOW() WHERE id=$${idx}`;
            vals.push(name, permId);
         } else if (role === 'parent') {
-           if (p.status_hod !== 'Approved') return res.json({ success: false, message: "Awaiting academic approvals" });
            q += `status_parent='Approved' WHERE id=$${idx}`;
            vals.push(permId);
         }
