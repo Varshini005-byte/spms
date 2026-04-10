@@ -109,7 +109,8 @@ export default function FacultyDashboard() {
                       { label: 'Coun.', status: req.status_counselor, name: req.c_name },
                       { label: 'Tea.', status: req.status_class_teacher, name: req.t_name },
                       { label: 'HOD', status: req.status_hod, name: req.h_name },
-                      { label: 'War.', status: req.status_warden, name: req.w_name }
+                      { label: 'War.', status: req.status_warden, name: req.w_name },
+                      { label: 'Par.', status: req.status_parent, name: req.parent_name }
                     ].map((step, i) => (
                       <div key={i} style={{textAlign: 'center', flex: 1}}>
                         <div style={{

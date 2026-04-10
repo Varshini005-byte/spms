@@ -127,7 +127,7 @@ app.post("/permissions/request", upload.single("attachment"), async (req, res) =
     let suspiciousFlag = user.attendance < 60;
 
     let finalStatus = "Pending";
-    let statusCoun = "Pending", statusTea = "N/A", statusHod = "N/A", statusWar = "N/A", statusPar = "N/A";
+    let statusCoun = "N/A", statusTea = "N/A", statusHod = "N/A", statusWar = "N/A", statusPar = "Pending";
 
     // --- AUTO-APPROVAL LOGIC ---
     const autoApproveKeywords = ["lunch", "snack", "canteen"];
@@ -139,19 +139,14 @@ app.post("/permissions/request", upload.single("attachment"), async (req, res) =
     } else if (isShortOuting) {
       finalStatus = "Approved (Auto)";
       statusCoun = "Approved"; statusTea = "Approved"; statusHod = "Approved";
-      statusWar = isHosteler ? "Approved" : "N/A";
-      statusPar = "N/A";
+      statusWar = "N/A"; statusPar = "N/A";
     } else {
-       if (category === "Health") {
-          if (isHosteler) { statusCoun = "N/A"; statusTea = "N/A"; statusHod = "N/A"; statusWar = "Pending"; statusPar = "Pending"; } 
-          else { statusCoun = "Pending"; statusPar = "Pending"; }
-       } else if (category === "Event In") {
-          statusCoun = "Pending";
-       } else {
-          statusCoun = "Pending";
-          if (isHosteler) { statusWar = "Pending"; statusPar = "Pending"; } 
-          else { statusPar = "Pending"; }
-       }
+       // Standard Sequential Flow
+       statusCoun = "Pending";
+       statusTea = "Pending";
+       statusHod = "Pending";
+       if (isHosteler) statusWar = "Pending";
+       statusPar = "Pending";
     }
 
     const insertResult = await pool.query(
@@ -209,21 +204,25 @@ app.get("/permissions", async (req, res) => {
        if (view === 'history') {
          queryStr += ` WHERE (p.status_counselor != 'Pending' OR p.status_class_teacher != 'Pending' OR p.status_hod != 'Pending')`;
        } else {
-         if (subRole === 'counselor') queryStr += ` WHERE p.status_counselor = 'Pending'`;
-         else if (subRole === 'class_teacher') queryStr += ` WHERE p.status_class_teacher = 'Pending'`;
-         else if (subRole === 'hod') queryStr += ` WHERE p.status_hod = 'Pending'`;
+         if (subRole === 'counselor') {
+            queryStr += ` WHERE p.status_counselor = 'Pending'`;
+         } else if (subRole === 'class_teacher') {
+            queryStr += ` WHERE p.status_class_teacher = 'Pending' AND p.status_counselor = 'Approved'`;
+         } else if (subRole === 'hod') {
+            queryStr += ` WHERE p.status_hod = 'Pending' AND p.status_class_teacher = 'Approved'`;
+         }
        }
        queryStr += ` ORDER BY p.priority DESC, p.created_at DESC`;
     } else if (role === 'warden') {
        if (view === 'history') {
          queryStr += ` WHERE p.status_warden != 'Pending'`;
        } else {
-         queryStr += ` WHERE p.status_warden = 'Pending' AND p.status_hod IN ('N/A', 'Approved')`;
+         queryStr += ` WHERE p.status_warden = 'Pending' AND p.status_hod = 'Approved'`;
        }
        queryStr += ` ORDER BY p.priority DESC, p.created_at DESC`;
     } else if (role === 'parent') {
-       queryStr += ` WHERE p.status_parent = 'Pending' AND p.student_id = $1 AND p.status_hod IN ('N/A', 'Approved') AND p.status_warden IN ('N/A', 'Approved') ORDER BY p.created_at DESC`;
-       values = [id];
+       queryStr += ` WHERE p.status_parent = 'Pending' AND p.student_id = (SELECT id FROM users WHERE roll_no = $1 LIMIT 1) AND p.status_hod = 'Approved' AND (p.status_warden = 'N/A' OR p.status_warden = 'Approved') ORDER BY p.created_at DESC`;
+       values = [id]; // id is student's roll number entered by parent
     } else if (role === 'admin') {
        queryStr += ` ORDER BY p.created_at DESC`;
     }
@@ -259,20 +258,24 @@ app.put("/permissions/:id", async (req, res) => {
         q += `final_status='Rejected', ${statusCol}='Rejected', rejected_by=$${idx++} WHERE id=$${idx}`;
         vals.push(name, permId);
      } else {
-        // Approval Logic
+        // Approval Logic with Sequential Check
         if (sub_role === 'counselor') {
            q += `status_counselor='Approved', c_name=$${idx++}, c_approved_at=NOW(), status_class_teacher='Pending' WHERE id=$${idx}`;
            vals.push(name, permId);
         } else if (sub_role === 'class_teacher') {
+           if (p.status_counselor !== 'Approved') return res.json({ success: false, message: "Awaiting Counselor approval" });
            q += `status_class_teacher='Approved', t_name=$${idx++}, t_approved_at=NOW(), status_hod='Pending' WHERE id=$${idx}`;
            vals.push(name, permId);
         } else if (sub_role === 'hod') {
+           if (p.status_class_teacher !== 'Approved') return res.json({ success: false, message: "Awaiting Class Teacher approval" });
            q += `status_hod='Approved', h_name=$${idx++}, h_approved_at=NOW() WHERE id=$${idx}`;
            vals.push(name, permId);
         } else if (role === 'warden') {
+           if (p.status_hod !== 'Approved') return res.json({ success: false, message: "Awaiting HOD approval" });
            q += `status_warden='Approved', w_name=$${idx++}, w_approved_at=NOW() WHERE id=$${idx}`;
            vals.push(name, permId);
         } else if (role === 'parent') {
+           if (p.status_hod !== 'Approved') return res.json({ success: false, message: "Awaiting academic approvals" });
            q += `status_parent='Approved' WHERE id=$${idx}`;
            vals.push(permId);
         }
@@ -298,6 +301,31 @@ app.put("/permissions/:id", async (req, res) => {
   } catch (err) {
      console.error(err);
      res.status(500).json({ success: false });
+  }
+});
+
+// ================= OTP VERIFICATION =================
+app.post("/parent/verify-otp", async (req, res) => {
+  const { student_id, otp, permission_id } = req.body;
+  const otpDb = require("./db/parentOtpQueries");
+
+  try {
+    const validOtp = await otpDb.findValidOtp(pool, student_id, otp);
+    if (!validOtp) {
+      return res.json({ success: false, message: "Invalid or expired OTP ❌" });
+    }
+
+    // Mark verified
+    await otpDb.markOtpVerified(pool, validOtp.id);
+    
+    // Update permission status
+    await otpDb.updatePermissionParentStatus(pool, permission_id, "Approved");
+    await otpDb.checkAndUpdateFinalStatus(pool, permission_id);
+
+    res.json({ success: true, message: "OTP Verified Successfully ✅" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false });
   }
 });
 

@@ -25,7 +25,33 @@ async function migrate() {
       ADD COLUMN IF NOT EXISTS roll_no VARCHAR(20) UNIQUE,
       ADD COLUMN IF NOT EXISTS faculty_id VARCHAR(20) UNIQUE,
       ADD COLUMN IF NOT EXISTS phone_no VARCHAR(15) UNIQUE,
-      ADD COLUMN IF NOT EXISTS parent_of_roll_no VARCHAR(20);
+      ADD COLUMN IF NOT EXISTS parent_of_roll_no VARCHAR(20),
+      ADD COLUMN IF NOT EXISTS parent_email VARCHAR(100);
+    `);
+
+    // 1.5. Create OTP tables
+    console.log("Creating OTP verification tables...");
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS parent_otp_verifications (
+        id SERIAL PRIMARY KEY,
+        student_id INTEGER REFERENCES users(id),
+        permission_id INTEGER,
+        parent_contact VARCHAR(100),
+        otp VARCHAR(6),
+        verified BOOLEAN DEFAULT FALSE,
+        attempts INTEGER DEFAULT 0,
+        expires_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS otp_audit_log (
+        id SERIAL PRIMARY KEY,
+        student_id INTEGER,
+        permission_id INTEGER,
+        action VARCHAR(100),
+        ip_address VARCHAR(50),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
     `);
 
     // 2. Create Permissions table

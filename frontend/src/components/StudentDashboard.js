@@ -129,18 +129,19 @@ export default function StudentDashboard() {
               { label: 'Counsellor', status: req.status_counselor, name: req.c_name },
               { label: 'Teacher', status: req.status_class_teacher, name: req.t_name },
               { label: 'HOD', status: req.status_hod, name: req.h_name },
-              { label: 'Warden', status: req.status_warden, name: req.w_name }
+              { label: 'Warden', status: req.status_warden, name: req.w_name },
+              { label: 'Parent', status: req.status_parent, name: req.parent_name }
             ].map((step, i) => (
               <div key={i} style={{textAlign: 'center', flex: 1, position: 'relative', zIndex: 1}}>
                 <div style={{
-                  width: 24, height: 24, borderRadius: '50%', margin: '0 auto',
+                  width: 20, height: 20, borderRadius: '50%', margin: '0 auto',
                   background: step.status === 'Approved' ? '#10b981' : step.status === 'Pending' ? '#f59e0b' : step.status === 'Rejected' ? '#ef4444' : '#e2e8f0',
-                  color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem'
+                  color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem'
                 }}>
                   {step.status === 'Approved' ? '✓' : step.status === 'Pending' ? '...' : i+1}
                 </div>
-                <div style={{fontSize: '0.65rem', fontWeight: 700, marginTop: 4, color: 'var(--text-main)'}}>{step.label}</div>
-                {step.name && <div style={{fontSize: '0.6rem', color: 'var(--text-muted)'}}>{step.name}</div>}
+                <div style={{fontSize: '0.55rem', fontWeight: 700, marginTop: 4, color: 'var(--text-main)'}}>{step.label}</div>
+                {step.name && <div style={{fontSize: '0.5rem', color: 'var(--text-muted)'}}>{step.name.split(' ')[0]}</div>}
               </div>
             ))}
           </div>
