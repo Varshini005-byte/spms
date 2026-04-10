@@ -144,4 +144,40 @@ async function sendFacultyNotificationEmail(to, subject, details) {
   });
 }
 
-module.exports = { generateOTP, sendOtpEmail, sendFacultyNotificationEmail };
+/**
+ * Send OTP for student/faculty registration.
+ * @param {string} to - Recipient email
+ * @param {string} otp - 6-digit OTP
+ */
+async function sendRegistrationOtpEmail(to, otp) {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px; padding: 20px;">
+      <h2 style="color: #4f46e5; text-align: center;">Account Verification</h2>
+      <p>Thank you for registering on <strong>BVRIT SPMS</strong>.</p>
+      <p>Use the following OTP to verify your email address and complete your registration:</p>
+      <div style="text-align: center; margin: 30px 0;">
+        <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; background: #f3f4f6; padding: 10px 20px; border-radius: 8px; color: #1f2937;">
+          ${otp}
+        </span>
+      </div>
+      <p style="color: #6b7280; font-size: 14px;">This OTP will expire in 10 minutes. If you did not request this, please ignore this email.</p>
+    </div>
+  `;
+
+  return transporter.sendMail({
+    from: `"SPMS Accounts" <${process.env.EMAIL_USER}>`,
+    to,
+    subject: "[BVRIT SPMS] Verify your email address",
+    html: htmlContent
+  });
+}
+
+module.exports = { generateOTP, sendOtpEmail, sendFacultyNotificationEmail, sendRegistrationOtpEmail };

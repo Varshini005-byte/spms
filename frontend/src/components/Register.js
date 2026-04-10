@@ -21,8 +21,12 @@ export default function Register() {
     parent_email: "",
     counselor_id: "",
     class_teacher_id: "",
-    hod_id: ""
+    hod_id: "",
+    otp: ""
   });
+
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
 
   const [facultyList, setFacultyList] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -34,6 +38,30 @@ export default function Register() {
       .then(data => { if (data.success) setFacultyList(data.data); })
       .catch(console.error);
   }, []);
+
+  const handleSendOtp = async () => {
+    if (!form.email) return setError("Please enter your email first 📧");
+    setOtpLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/register/send-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: form.email })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setOtpSent(true);
+        alert(data.message);
+      } else {
+        setError(data.message);
+      }
+    } catch {
+      setError("Failed to send OTP. Check your connection.");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -193,6 +221,27 @@ export default function Register() {
 
               <label>Confirm Password<RequiredStar /></label>
               <input required type="password" placeholder="Re-type Password" value={form.confirm} onChange={(e) => setForm({ ...form, confirm: e.target.value })} />
+
+              <div style={{ background: "var(--bg-input)", padding: "15px", borderRadius: "12px", border: "1px solid var(--border)", marginTop: "20px" }}>
+                <label style={{ display: "block", marginBottom: "8px", fontWeight: "600" }}>Email Verification<RequiredStar /></label>
+                <div style={{ display: "flex", gap: "10px" }}>
+                  <input 
+                    placeholder="Enter 6-digit code" 
+                    value={form.otp} 
+                    onChange={(e) => setForm({ ...form, otp: e.target.value })} 
+                    style={{ flex: 1, marginBottom: 0 }}
+                  />
+                  <button 
+                    type="button" 
+                    onClick={handleSendOtp} 
+                    disabled={otpLoading}
+                    style={{ padding: "0 15px", background: "#4f46e5", color: "white", border: "none", borderRadius: "8px", fontSize: "0.75rem", cursor: "pointer", opacity: otpLoading ? 0.7 : 1 }}
+                  >
+                    {otpSent ? "Resend" : "Send Code"}
+                  </button>
+                </div>
+                {otpSent && <p style={{ fontSize: "0.7rem", color: "#10b981", marginTop: "5px", margin: 0 }}>Code sent to {form.email}!</p>}
+              </div>
 
               <button type="submit" className="submit-btn" style={{ marginTop: "25px", opacity: loading ? 0.7 : 1, pointerEvents: loading ? "none" : "auto" }}>
                 {loading ? "Creating Account..." : "Register Securely"}
