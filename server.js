@@ -177,7 +177,11 @@ app.post("/permissions/request", upload.single("attachment"), async (req, res) =
        statusTea = "Pending";
        statusHod = "Pending";
        if (isHosteler) statusWar = "Pending";
-       statusPar = "Pending";
+       if (category === "Campus Events" || category === "Off-Campus Events") {
+         statusPar = "N/A";
+       } else {
+         statusPar = "Pending";
+       }
     }
 
     const insertResult = await pool.query(
