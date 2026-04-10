@@ -58,57 +58,34 @@ app.post("/register/send-otp", async (req, res) => {
 });
 
 app.post("/register", async (req, res) => {
-  const { name, email, password, role, residence_type, roll_no, faculty_id, phone_no, parent_of_roll_no, parent_email, counselor_id, class_teacher_id, hod_id, otp } = req.body;
+  const { name, email, password, role, residence_type, roll_no, faculty_id, phone_no, parent_of_roll_no, parent_email, counselor_id, class_teacher_id, hod_id } = req.body;
 
-  // Real Email Verification Check
-  try {
-    const otpCheck = await pool.query(
-      "SELECT * FROM registration_otps WHERE email=$1 AND otp=$2 AND expires_at > NOW()",
-      [email, otp]
-    );
-    if (otpCheck.rows.length === 0) {
-      return res.json({ success: false, message: "Invalid or expired verification code ❌" });
-    }
-  } catch (err) {
-    console.error("OTP Validation Error:", err);
-    return res.status(500).json({ success: false, message: "Internal verification error" });
-  }
-
-  // Security: Check if phone number is already registered as a student to prevent misuse as parent
+  // Security check for parent
   if (role === 'parent' && phone_no) {
     try {
       const studentCheck = await pool.query("SELECT * FROM users WHERE phone_no=$1 AND role='student'", [phone_no]);
       if (studentCheck.rows.length > 0) {
-        return res.json({ success: false, message: "Security Alert: This phone number is registered to a student and cannot be used for parent registration." });
+        return res.json({ success: false, message: "Security Alert: This phone number is registered to a student." });
       }
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   }
 
   try {
-    // Check for existing user using the specific identifier based on role
     let checkQuery = "SELECT * FROM users WHERE email=$1";
     let checkVal = email;
-
     if (role === 'student') { checkQuery = "SELECT * FROM users WHERE roll_no=$1"; checkVal = roll_no; }
     else if (role === 'faculty') { checkQuery = "SELECT * FROM users WHERE faculty_id=$1"; checkVal = faculty_id; }
     else if (role === 'warden' || role === 'parent') { checkQuery = "SELECT * FROM users WHERE phone_no=$1"; checkVal = phone_no; }
 
-    if (checkVal) {
-      const check = await pool.query(checkQuery, [checkVal]);
-      if (check.rows.length > 0) return res.json({ success: false, message: "User already exists with this identifier" });
-    }
+    const check = await pool.query(checkQuery, [checkVal]);
+    if (check.rows.length > 0) return res.json({ success: false, message: "User already exists" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const defaultResType = residence_type || 'day_scholar';
-
-    // Clean identifiers: replace empty strings with null to avoid UNIQUE constraint issues
     const cleanRollNo = (role === 'student') ? roll_no : null;
     const cleanFacultyId = (role === 'faculty') ? faculty_id : null;
-    const cleanPhoneNo = (role === 'warden' || role === 'parent' || role === 'student' || role === 'faculty') ? phone_no : null;
-
-    // For student registrations, correctly parse the faculty ids from strings to Ints (or null)
+    const cleanPhoneNo = phone_no || null;
+    
     let cId = role === 'student' && counselor_id ? parseInt(counselor_id, 10) : null;
     let tId = role === 'student' && class_teacher_id ? parseInt(class_teacher_id, 10) : null;
     let hId = role === 'student' && hod_id ? parseInt(hod_id, 10) : null;
@@ -119,21 +96,20 @@ app.post("/register", async (req, res) => {
       [name, email, hashedPassword, role, 100, defaultResType, cleanRollNo, cleanFacultyId, cleanPhoneNo, parent_of_roll_no, parent_email, cId, tId, hId]
     );
 
-    // Clean up OTP after success
-    await pool.query("DELETE FROM registration_otps WHERE email=$1", [email]);
+    // AUTOMATED NOTIFICATION (Receipt style)
+    try {
+      const { sendFacultyNotificationEmail } = require("./utils/otpUtils");
+      await sendFacultyNotificationEmail(email, "[SPMS] Welcome to the System!", {
+        studentName: name, rollNo: cleanRollNo || faculty_id || 'N/A', category: "Account Registration",
+        actionMsg: `Hello ${name}! Your SPMS account has been successfully created. You will now receive automated email notifications whenever a permission request is submitted or updated.`,
+        reason: "Registration Success"
+      });
+    } catch (e) { console.error("Welcome email fail:", e.message); }
 
     res.json({ success: true });
   } catch (err) {
-    console.error("Registration Error:", err);
-    let errorMsg = "Registration failed ❌";
-    if (err.code === '23505') {
-       if (err.detail.includes('email')) errorMsg = "Email already registered ❌";
-       else if (err.detail.includes('roll_no')) errorMsg = "Roll Number already registered ❌";
-       else if (err.detail.includes('faculty_id')) errorMsg = "Faculty ID already registered ❌";
-       else if (err.detail.includes('phone_no')) errorMsg = "Phone Number already registered ❌";
-       else errorMsg = "Duplicate entry found ❌";
-    }
-    res.status(400).json({ success: false, message: errorMsg });
+    console.error(err);
+    res.status(400).json({ success: false, message: "Registration failed ❌" });
   }
 });
 
