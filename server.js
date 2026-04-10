@@ -370,6 +370,15 @@ app.post("/parent/verify-otp", async (req, res) => {
   }
 });
 
+// Serve STATIC files from the React app
+app.use(express.static(path.join(__dirname, "frontend/build")));
+
+// The "catchall" handler: for any request that doesn't
+// match one above, send back React's index.html file.
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "frontend/build", "index.html"));
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, "0.0.0.0", () => {
   console.log("Server running 🚀 on port " + PORT);
