@@ -102,4 +102,46 @@ async function sendOtpEmail(to, otp, studentName, category = "Permission") {
   return result;
 }
 
-module.exports = { generateOTP, sendOtpEmail };
+/**
+ * Send notification email to faculty/warden.
+ * @param {string} to - Recipient email
+ * @param {string} subject - Email subject
+ * @param {object} details - { studentName, rollNo, category, link }
+ */
+async function sendFacultyNotificationEmail(to, subject, details) {
+  const transporter = createTransporter();
+  const { studentName, rollNo, category, actionMsg, reason } = details;
+
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+      <div style="background: #4f46e5; color: white; padding: 24px; text-align: center;">
+        <h2 style="margin: 0;">SPMS Active Notification</h2>
+      </div>
+      <div style="padding: 24px; color: #1e293b;">
+        <p>Hello,</p>
+        <p><strong>${actionMsg}</strong></p>
+        <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin: 20px 0;">
+          <p style="margin: 0 0 8px 0;"><strong>Student:</strong> ${studentName} (${rollNo})</p>
+          <p style="margin: 0 0 8px 0;"><strong>Category:</strong> ${category}</p>
+          ${reason ? `<p style="margin: 0;"><strong>Reason:</strong> ${reason}</p>` : ''}
+        </div>
+        <p>Please log in to the BVRIT SPMS portal to take action.</p>
+        <div style="text-align: center; margin-top: 30px;">
+          <a href="https://spms-frontendf.onrender.com" style="background: #4f46e5; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">Login to Portal</a>
+        </div>
+      </div>
+      <div style="background: #f1f5f9; padding: 16px; text-align: center; color: #64748b; font-size: 12px;">
+        Smart Permission Management System
+      </div>
+    </div>
+  `;
+
+  return transporter.sendMail({
+    from: `"SPMS Notifications" <${process.env.EMAIL_USER}>`,
+    to,
+    subject,
+    html: htmlContent
+  });
+}
+
+module.exports = { generateOTP, sendOtpEmail, sendFacultyNotificationEmail };

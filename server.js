@@ -136,17 +136,91 @@ app.get("/faculty-list", async (req, res) => {
   }
 });
 
+async function triggerNextEmail(permId) {
+  try {
+    const { sendFacultyNotificationEmail } = require("./utils/otpUtils");
+    const res = await pool.query(`
+      SELECT p.*, 
+             u.name as s_name, u.roll_no, u.residence_type,
+             c.email as c_email, c.id as c_id,
+             t.email as t_email, t.id as t_id,
+             h.email as h_email, h.id as h_id,
+             (SELECT email FROM users WHERE role='warden' LIMIT 1) as w_email
+      FROM permissions p
+      JOIN users u ON p.student_id = u.id
+      LEFT JOIN users c ON u.counselor_id = c.id
+      LEFT JOIN users t ON u.class_teacher_id = t.id
+      LEFT JOIN users h ON u.hod_id = h.id
+      WHERE p.id = $1
+    `, [permId]);
+    
+    if (res.rows.length === 0) return;
+    const p = res.rows[0];
+    
+    let targetEmail = null;
+    let actionMsg = "";
+    
+    // Logic for next person in line
+    if (p.status_counselor === 'Approved' && p.status_class_teacher === 'Pending') {
+      targetEmail = p.t_email;
+      actionMsg = "The counselor has approved this request. It is now awaiting your Class Teacher approval.";
+    } else if (p.status_hod === 'Pending' && (p.status_class_teacher === 'Approved' || (p.priority === 'Urgent' && p.final_status === 'Pending'))) {
+      targetEmail = p.h_email;
+      actionMsg = p.priority === 'Urgent' ? "🚨 EMERGENCY: This request has been escalated or marked as an emergency and is awaiting your immediate HOD approval." : "The class teacher has approved this request. It is now awaiting your HOD approval.";
+    } else if (p.status_hod === 'Approved' && p.status_warden === 'Pending' && p.residence_type === 'hosteler') {
+      targetEmail = p.w_email;
+      actionMsg = "The HOD has approved this request. As the student is a hosteler, it is now awaiting your Warden approval.";
+    } else if (p.hod_bypass) {
+       // Send emails to bypassed counselor/teacher
+       if (p.c_email) {
+         await sendFacultyNotificationEmail(p.c_email, `[SPMS] Emergency Bypass: ${p.s_name}`, {
+           studentName: p.s_name, rollNo: p.roll_no, category: p.category, reason: p.reason,
+           actionMsg: "🚨 HOD Emergency Bypass: The HOD has directly approved this URGENT request. Your approval was bypassed for emergency."
+         });
+       }
+       if (p.t_email) {
+         await sendFacultyNotificationEmail(p.t_email, `[SPMS] Emergency Bypass: ${p.s_name}`, {
+           studentName: p.s_name, rollNo: p.roll_no, category: p.category, reason: p.reason,
+           actionMsg: "🚨 HOD Emergency Bypass: The HOD has directly approved this URGENT request. Your approval was bypassed for emergency."
+         });
+       }
+       return;
+    }
+    
+    if (targetEmail) {
+      await sendFacultyNotificationEmail(targetEmail, `[SPMS] Action Required: ${p.s_name}`, {
+        studentName: p.s_name,
+        rollNo: p.roll_no,
+        category: p.category,
+        reason: p.reason,
+        actionMsg
+      });
+    }
+  } catch (err) {
+    console.error("[Email Trigger Error]:", err.message);
+  }
+}
+
 // ================= PERMISSIONS =================
 app.post("/permissions/request", upload.single("attachment"), async (req, res) => {
   const { student_id, category, reason, is_emergency } = req.body;
   const attachmentUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
   try {
-    const userRes = await pool.query("SELECT attendance, residence_type FROM users WHERE id=$1", [student_id]);
+    const userRes = await pool.query(
+      `SELECT u.name, u.roll_no, u.attendance, u.residence_type, 
+              c.email as c_email, c.name as c_name,
+              t.email as t_email, t.name as t_name,
+              h.email as h_email, h.name as h_name
+       FROM users u 
+       LEFT JOIN users c ON u.counselor_id = c.id
+       LEFT JOIN users t ON u.class_teacher_id = t.id
+       LEFT JOIN users h ON u.hod_id = h.id
+       WHERE u.id=$1`, [student_id]);
     if (userRes.rows.length === 0) return res.json({ success: false, message: "User not found" });
     
-    const user = userRes.rows[0];
-    const isHosteler = user.residence_type === "hosteler";
+    const studentData = userRes.rows[0];
+    const isHosteler = studentData.residence_type === "hosteler";
 
     // --- SMART LOGIC ---
     let priority = "Normal";
@@ -155,7 +229,7 @@ app.post("/permissions/request", upload.single("attachment"), async (req, res) =
       priority = "Urgent";
     }
 
-    let suspiciousFlag = user.attendance < 60;
+    let suspiciousFlag = studentData.attendance < 60;
 
     let finalStatus = "Pending";
     let statusCoun = "N/A", statusTea = "N/A", statusHod = "N/A", statusWar = "N/A", statusPar = "Pending";
@@ -164,7 +238,7 @@ app.post("/permissions/request", upload.single("attachment"), async (req, res) =
     const autoApproveKeywords = ["lunch", "snack", "canteen"];
     const isShortOuting = category === "General Outing" && autoApproveKeywords.some(word => reason.toLowerCase().includes(word));
 
-    if (user.attendance < 75 && !isShortOuting) {
+    if (studentData.attendance < 75 && !isShortOuting) {
       finalStatus = "Rejected (Low Attendance)";
       statusCoun = "Rejected";
     } else if (isShortOuting) {
@@ -210,6 +284,22 @@ app.post("/permissions/request", upload.single("attachment"), async (req, res) =
       } catch (otpErr) {
         // OTP send failure should not block permission creation
         console.error("[OTP] Auto-send failed (non-blocking):", otpErr.message);
+      }
+    }
+
+    // Notify Counselor via Email
+    if (statusCoun === "Pending" && studentData.c_email) {
+      try {
+        const { sendFacultyNotificationEmail } = require("./utils/otpUtils");
+        await sendFacultyNotificationEmail(studentData.c_email, `[SPMS] New Request: ${studentData.name}`, {
+          studentName: studentData.name,
+          rollNo: studentData.roll_no,
+          category,
+          reason,
+          actionMsg: `A new ${priority} permission request has been submitted and is awaiting your Counselor approval.`
+        });
+      } catch (err) {
+        console.error("[Email] Counselor notification failed:", err.message);
       }
     }
 
@@ -384,6 +474,7 @@ app.put("/permissions/:id", async (req, res) => {
      }
 
      await pool.query(q, vals);
+     await triggerNextEmail(permId);
 
      // Check if Final Approval is reached
      const check = await pool.query("SELECT * FROM permissions WHERE id=$1", [permId]);
@@ -410,6 +501,7 @@ app.put("/permissions/:id/escalate", async (req, res) => {
   const permId = req.params.id;
   try {
      await pool.query("UPDATE permissions SET priority='Urgent' WHERE id=$1", [permId]);
+     await triggerNextEmail(permId);
      res.json({ success: true, message: "Request escalated successfully" });
   } catch (err) {
      console.error(err);
