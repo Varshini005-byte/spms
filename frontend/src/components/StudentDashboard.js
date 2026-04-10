@@ -38,6 +38,22 @@ export default function StudentDashboard() {
     { name: "My Passes", icon: <QrCode size={20} /> }
   ];
 
+  const handleEscalate = async (id) => {
+    if (!window.confirm("Are you sure you want to escalate this to an Emergency? The HOD will be notified directly.")) return;
+    try {
+      const res = await fetch(`${API_BASE}/permissions/${id}/escalate`, { method: "PUT" });
+      const data = await res.json();
+      if (data.success) {
+        setNotification({ message: "Escalated to Emergency! 🚨", type: "success" });
+        fetchHistory();
+      } else {
+        setNotification({ message: "Escalation failed ❌", type: "error" });
+      }
+    } catch {
+      setNotification({ message: "Network error ⚠️", type: "error" });
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
@@ -171,6 +187,18 @@ export default function StudentDashboard() {
           </span>
         </div>
       </div>
+
+      {req.final_status === 'Pending' && req.priority !== 'Urgent' && (Date.now() - new Date(req.created_at).getTime() > 30 * 60 * 1000) && (
+        <div style={{ marginTop: 15 }}>
+          <button 
+            className="submit-btn" 
+            style={{ width: '100%', padding: '10px', fontSize: '0.8rem', background: '#8b5cf6' }}
+            onClick={() => handleEscalate(req.id)}
+          >
+            🚨 Escalate to Emergency (No response > 30 mins)
+          </button>
+        </div>
+      )}
     </>
   );
 
