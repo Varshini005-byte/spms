@@ -4,6 +4,7 @@ import { AlertTriangle, User, Activity, FileText, Tag, PieChart as PieChartIcon,
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { useTheme } from "../App";
 import "./StudentDashboard.css"; 
+import { API_BASE } from "../apiConfig";
 
 export default function WardenDashboard() {
   const navigate = useNavigate();
@@ -15,8 +16,8 @@ export default function WardenDashboard() {
 
   const fetchRequests = () => {
     const url = viewMode === 'history' 
-      ? `/permissions?role=warden&view=history`
-      : `/permissions?role=warden`;
+      ? `${API_BASE}/permissions?role=warden&view=history`
+      : `${API_BASE}/permissions?role=warden`;
 
     fetch(url)
       .then(res => res.json())
@@ -30,7 +31,7 @@ export default function WardenDashboard() {
 
   const handleAction = async (id, action) => {
     try {
-      const res = await fetch(`/permissions/${id}`, {
+      const res = await fetch(`${API_BASE}/permissions/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ role: "warden", action })
@@ -59,6 +60,9 @@ export default function WardenDashboard() {
             <p className="nav-subtitle">{user.name} ({user.phone_no})</p>
           </div>
           <div style={{display: 'flex', gap: 10}}>
+            <button className="logout-btn" style={{background: 'var(--bg-input)'}} onClick={toggleTheme}>
+               {theme === 'light' ? <Moon size={18}/> : <Sun size={18}/>}
+            </button>
             <button className="logout-btn" style={{background: viewMode === 'history' ? '#10b981' : 'var(--bg-input)', color: viewMode === 'history' ? 'white' : 'var(--text-main)'}} onClick={() => setViewMode(viewMode === 'pending' ? 'history' : 'pending')}>
               <FileText size={18}/>
             </button>
@@ -115,7 +119,7 @@ export default function WardenDashboard() {
                   <div className="request-detail"><Tag size={16} /> <strong>Category:</strong> {req.category}</div>
                   <div className="request-detail"><Activity size={16} /> <strong>Attendance:</strong> {req.attendance}%</div>
                   <div className="request-detail"><FileText size={16} /> <strong>Reason:</strong> {req.reason}</div>
-                  {req.attachment_url && <a href={`https://spms-ie7g.onrender.com${req.attachment_url}`} target="_blank" rel="noreferrer" style={{fontSize: '0.85rem', color: '#2563eb', textDecoration: 'none'}}>View Document</a>}
+                  {req.attachment_url && <a href={req.attachment_url.startsWith('http') ? req.attachment_url : `${API_BASE}${req.attachment_url}`} target="_blank" rel="noreferrer" style={{fontSize: '0.85rem', color: '#2563eb', textDecoration: 'none'}}>View Document</a>}
                   
                   {viewMode === 'pending' ? (
                     <div style={{marginTop: 15, display: 'flex', gap: 10}}>
@@ -137,3 +141,4 @@ export default function WardenDashboard() {
     </div>
   );
 }
+

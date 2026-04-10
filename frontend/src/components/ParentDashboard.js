@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AlertTriangle, Activity, FileText, Tag, Sun, Moon } from "lucide-react";
 import { useTheme } from "../App";
 import "./StudentDashboard.css";
+import { API_BASE } from "../apiConfig";
 
 export default function ParentDashboard() {
   const navigate = useNavigate();
@@ -33,7 +34,7 @@ export default function ParentDashboard() {
   };
 
   const fetchRequests = (id) => {
-    fetch(`/permissions?role=parent&id=${id}`)
+    fetch(`${API_BASE}/permissions?role=parent&id=${id}`)
       .then(res => res.json())
       .then(data => { if(data.success) setRequests(data.data) })
       .catch(err => console.error(err));
@@ -43,7 +44,7 @@ export default function ParentDashboard() {
     if (action === "Rejected") {
         // Just reject directly (no OTP needed for rejection usually, or up to you)
         try {
-          const res = await fetch(`/permissions/${req.id}`, {
+          const res = await fetch(`${API_BASE}/permissions/${req.id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ role: "parent", action, name: user.name })
@@ -62,7 +63,7 @@ export default function ParentDashboard() {
     if (!otpCode) return;
 
     try {
-      const res = await fetch(`/parent/verify-otp`, {
+      const res = await fetch(`${API_BASE}/parent/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -85,7 +86,7 @@ export default function ParentDashboard() {
 
   const handleResendOtp = async (reqId, studentId) => {
     try {
-      const res = await fetch(`/parent/resend-otp`, {
+      const res = await fetch(`${API_BASE}/parent/resend-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ student_id: studentId, permission_id: reqId })
@@ -165,7 +166,7 @@ export default function ParentDashboard() {
               <div className="request-detail"><Tag size={16} /> <strong>Category:</strong> {req.category}</div>
               <div className="request-detail"><Activity size={16} /> <strong>Attendance:</strong> {req.attendance}% {req.attendance < 75 && <span style={{color: '#f59e0b', display: 'inline-flex', alignItems: 'center', gap: 4}}><AlertTriangle size={16} /> LOW</span>}</div>
               <div className="request-detail"><FileText size={16} /> <strong>Reason:</strong> {req.reason}</div>
-              {req.attachment_url && <a href={req.attachment_url} target="_blank" rel="noreferrer" style={{fontSize: '0.85rem', color: '#2563eb', textDecoration: 'none'}}>View Document</a>}
+              {req.attachment_url && <a href={req.attachment_url.startsWith('http') ? req.attachment_url : `${API_BASE}${req.attachment_url}`} target="_blank" rel="noreferrer" style={{fontSize: '0.85rem', color: '#2563eb', textDecoration: 'none'}}>View Document</a>}
               <div style={{marginTop: 15, display: 'flex', flexWrap: 'wrap', gap: 10}}>
                 <button className="submit-btn" style={{flex: 1, padding: 12, fontSize: '0.85rem', background: '#10b981'}} onClick={() => handleAction(req, "Approved")}>Approve</button>
                 <button className="submit-btn" style={{flex: 1, padding: 12, fontSize: '0.85rem', background: "#ef4444"}} onClick={() => handleAction(req, "Rejected")}>Reject</button>

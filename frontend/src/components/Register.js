@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./StudentDashboard.css";
 
+import { API_BASE } from "../apiConfig";
+
 export default function Register() {
   const navigate = useNavigate();
 
@@ -40,7 +42,7 @@ export default function Register() {
     }
 
     try {
-      const res = await fetch("/register", {
+      const res = await fetch(`${API_BASE}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form)

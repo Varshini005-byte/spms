@@ -4,6 +4,8 @@ import { GraduationCap, Briefcase, Shield, Users, Sun, Moon } from "lucide-react
 import { useTheme } from "../App";
 import "./Home.css";
 
+import { API_BASE } from "../apiConfig";
+
 export default function Home() {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
@@ -14,7 +16,7 @@ export default function Home() {
 
     const handleLogin = async () => {
       try {
-        const res = await fetch("/login", {
+        const res = await fetch(`${API_BASE}/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ identifier: idInput, password: passInput, role: role })

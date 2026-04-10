@@ -4,6 +4,7 @@ import { AlertTriangle, User, Activity, FileText, PieChart as PieChartIcon, BarC
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { useTheme } from "../App";
 import "./StudentDashboard.css"; 
+import { API_BASE } from "../apiConfig";
 
 export default function FacultyDashboard() {
   const navigate = useNavigate();
@@ -20,8 +21,8 @@ export default function FacultyDashboard() {
   const fetchRequests = () => {
     const subRole = user.sub_role || 'counselor';
     const url = viewMode === 'history' 
-      ? `/permissions?role=faculty&view=history`
-      : `/permissions?role=faculty&sub_role=${subRole}`;
+      ? `${API_BASE}/permissions?role=faculty&view=history`
+      : `${API_BASE}/permissions?role=faculty&sub_role=${subRole}`;
     
     fetch(url)
       .then(res => res.json())
@@ -35,7 +36,7 @@ export default function FacultyDashboard() {
 
   const handleAction = async (id, action) => {
     try {
-      const res = await fetch(`/permissions/${id}`, {
+      const res = await fetch(`${API_BASE}/permissions/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -126,7 +127,7 @@ export default function FacultyDashboard() {
                   <div className="request-detail"><User size={16} /> <strong>Student:</strong> {req.name}</div>
                   <div className="request-detail"><Activity size={16} /> <strong>Attendance:</strong> {req.attendance}%</div>
                   <div className="request-detail"><FileText size={16} /> <strong>Reason:</strong> {req.reason}</div>
-                  {req.attachment_url && <a href={`https://spms-ie7g.onrender.com${req.attachment_url}`} target="_blank" rel="noreferrer" style={{fontSize: '0.85rem', color: '#2563eb', textDecoration: 'none'}}>View Document</a>}
+                  {req.attachment_url && <a href={req.attachment_url.startsWith('http') ? req.attachment_url : `${API_BASE}${req.attachment_url}`} target="_blank" rel="noreferrer" style={{fontSize: '0.85rem', color: '#2563eb', textDecoration: 'none'}}>View Document</a>}
                   {viewMode === 'pending' ? (
                     <div style={{marginTop: 15, display: 'flex', gap: 10}}>
                       <button className="submit-btn" style={{flex: 1, padding: 12, fontSize: '0.85rem'}} onClick={() => handleAction(req.id, "Approved")}>Approve</button>

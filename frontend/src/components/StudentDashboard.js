@@ -4,6 +4,7 @@ import { Home, Stethoscope, GraduationCap, Rocket, MapPin, ClipboardList, Clock,
 import { QRCodeCanvas } from "qrcode.react";
 import { useTheme } from "../App";
 import "./StudentDashboard.css";
+import { API_BASE } from "../apiConfig";
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
@@ -21,7 +22,7 @@ export default function StudentDashboard() {
   }, [user.id]);
 
   const fetchHistory = () => {
-    fetch(`/permissions?role=student&id=${user.id}`)
+    fetch(`${API_BASE}/permissions?role=student&id=${user.id}`)
       .then(res => res.json())
       .then(data => { if (data.success) setRequests(data.data) })
       .catch(err => console.error(err));
@@ -49,7 +50,7 @@ export default function StudentDashboard() {
     if (form.attachment) formData.append("attachment", form.attachment);
 
     try {
-      const res = await fetch("/permissions/request", {
+      const res = await fetch(`${API_BASE}/permissions/request`, {
         method: "POST",
         body: formData
       });
@@ -154,7 +155,7 @@ export default function StudentDashboard() {
               </span>
             </div>
             {req.rejected_by && <div style={{marginTop: 5, fontSize: '0.75rem', color: '#ef4444'}}>Rejected by: {req.rejected_by}</div>}
-            {req.attachment_url && <div style={{marginTop: 5}}><a href={req.attachment_url} target="_blank" rel="noreferrer" style={{color: '#2563eb', textDecoration: 'none'}}>View Attachment</a></div>}
+            {req.attachment_url && <div style={{marginTop: 5}}><a href={req.attachment_url.startsWith('http') ? req.attachment_url : `${API_BASE}${req.attachment_url}`} target="_blank" rel="noreferrer" style={{color: '#2563eb', textDecoration: 'none'}}>View Attachment</a></div>}
           </div>
         </div>
       ))}
