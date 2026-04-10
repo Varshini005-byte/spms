@@ -37,7 +37,7 @@ app.use(parentOtpRoutes(pool));
 
 // ================= REGISTER =================
 app.post("/register", async (req, res) => {
-  const { name, email, password, role, residence_type, roll_no, faculty_id, phone_no, parent_of_roll_no, parent_email } = req.body;
+  const { name, email, password, role, residence_type, roll_no, faculty_id, phone_no, parent_of_roll_no, parent_email, counselor_id, class_teacher_id, hod_id } = req.body;
 
   // Security: Check if phone number is already registered as a student to prevent misuse as parent
   if (role === 'parent' && phone_no) {
@@ -73,10 +73,15 @@ app.post("/register", async (req, res) => {
     const cleanFacultyId = (role === 'faculty') ? faculty_id : null;
     const cleanPhoneNo = (role === 'warden' || role === 'parent' || role === 'student' || role === 'faculty') ? phone_no : null;
 
+    // For student registrations, correctly parse the faculty ids from strings to Ints (or null)
+    let cId = role === 'student' && counselor_id ? parseInt(counselor_id, 10) : null;
+    let tId = role === 'student' && class_teacher_id ? parseInt(class_teacher_id, 10) : null;
+    let hId = role === 'student' && hod_id ? parseInt(hod_id, 10) : null;
+
     await pool.query(
-      `INSERT INTO users (name, email, password, role, attendance, residence_type, roll_no, faculty_id, phone_no, parent_of_roll_no, parent_email) 
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-      [name, email, hashedPassword, role, 100, defaultResType, cleanRollNo, cleanFacultyId, cleanPhoneNo, parent_of_roll_no, parent_email]
+      `INSERT INTO users (name, email, password, role, attendance, residence_type, roll_no, faculty_id, phone_no, parent_of_roll_no, parent_email, counselor_id, class_teacher_id, hod_id) 
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+      [name, email, hashedPassword, role, 100, defaultResType, cleanRollNo, cleanFacultyId, cleanPhoneNo, parent_of_roll_no, parent_email, cId, tId, hId]
     );
     res.json({ success: true });
   } catch (err) {
@@ -114,6 +119,19 @@ app.post("/login", async (req, res) => {
     res.json({ success: true, user: user });
   } catch (err) {
     console.log(err);
+    res.status(500).json({ success: false });
+  }
+});
+
+// ================= FACULTY LIST (FOR REGISTRATION) =================
+app.get("/faculty-list", async (req, res) => {
+  try {
+    const list = await pool.query(
+      "SELECT id, name, sub_role FROM users WHERE role='faculty' ORDER BY name ASC"
+    );
+    res.json({ success: true, data: list.rows });
+  } catch(err) {
+    console.error(err);
     res.status(500).json({ success: false });
   }
 });
@@ -214,17 +232,20 @@ app.get("/permissions", async (req, res) => {
        values = [id];
     } else if (role === 'faculty') {
        const subRole = req.query.sub_role;
+       // Strict filtering based on the student's mapped faculty
        if (view === 'history') {
-         queryStr += ` WHERE (p.status_counselor != 'Pending' OR p.status_class_teacher != 'Pending' OR p.status_hod != 'Pending')`;
+         queryStr += ` WHERE p.student_id IN (SELECT id FROM users WHERE counselor_id=$1 OR class_teacher_id=$1 OR hod_id=$1) AND (p.status_counselor != 'Pending' OR p.status_class_teacher != 'Pending' OR p.status_hod != 'Pending')`;
+         values = [id];
        } else {
          if (subRole === 'counselor') {
-            queryStr += ` WHERE p.status_counselor = 'Pending'`;
+            queryStr += ` WHERE p.status_counselor = 'Pending' AND p.student_id IN (SELECT id FROM users WHERE counselor_id=$1)`;
+            values = [id];
          } else if (subRole === 'class_teacher') {
-            // Class teacher sees their pending queue OR already-bypassed ones for awareness
-            queryStr += ` WHERE p.status_class_teacher = 'Pending' AND (p.status_counselor = 'Approved' OR p.hod_bypass = TRUE)`;
+            queryStr += ` WHERE p.status_class_teacher = 'Pending' AND (p.status_counselor = 'Approved' OR p.hod_bypass = TRUE) AND p.student_id IN (SELECT id FROM users WHERE class_teacher_id=$1)`;
+            values = [id];
          } else if (subRole === 'hod') {
-            // HOD sees: normal queue (counselor+teacher approved) OR urgent emergency requests that need direct approval
-            queryStr += ` WHERE p.status_hod = 'Pending' AND (p.status_class_teacher = 'Approved' OR (p.priority = 'Urgent' AND p.final_status = 'Pending'))`;
+            queryStr += ` WHERE p.status_hod = 'Pending' AND (p.status_class_teacher = 'Approved' OR (p.priority = 'Urgent' AND p.final_status = 'Pending')) AND p.student_id IN (SELECT id FROM users WHERE hod_id=$1)`;
+            values = [id];
          }
        }
        queryStr += ` ORDER BY p.priority DESC, p.created_at DESC`;
@@ -308,9 +329,7 @@ app.put("/permissions/:id", async (req, res) => {
              try {
                // Get student details
                const studentInfo = await pool.query(
-                 `SELECT u.name, u.roll_no, 
-                         (SELECT id FROM users WHERE sub_role='counselor' LIMIT 1) AS counselor_id,
-                         (SELECT id FROM users WHERE sub_role='class_teacher' LIMIT 1) AS teacher_id
+                 `SELECT u.name, u.roll_no, u.counselor_id, u.class_teacher_id
                   FROM users u WHERE u.id = $1`, [p.student_id]
                );
                const si = studentInfo.rows[0];

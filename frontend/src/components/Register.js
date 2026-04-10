@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./StudentDashboard.css";
 
@@ -18,11 +18,22 @@ export default function Register() {
     faculty_id: "",
     phone_no: "",
     parent_of_roll_no: "",
-    parent_email: ""
+    parent_email: "",
+    counselor_id: "",
+    class_teacher_id: "",
+    hod_id: ""
   });
 
+  const [facultyList, setFacultyList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/faculty-list`)
+      .then(res => res.json())
+      .then(data => { if (data.success) setFacultyList(data.data); })
+      .catch(console.error);
+  }, []);
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -118,6 +129,30 @@ export default function Register() {
                   <select style={{ padding: "12px", borderRadius: "8px", border: "1px solid #e2e8f0", outline: "none", backgroundColor: "var(--bg-input)", color: "var(--text-main)", marginBottom: "15px", width: "100%" }} value={form.residence_type} onChange={(e) => setForm({ ...form, residence_type: e.target.value })}>
                     <option value="day_scholar">Day Scholar</option>
                     <option value="hosteler">Hosteler</option>
+                  </select>
+
+                  <label>Select Counselor<RequiredStar /></label>
+                  <select required style={{ padding: "12px", borderRadius: "8px", border: "1px solid #e2e8f0", outline: "none", backgroundColor: "var(--bg-input)", color: "var(--text-main)", marginBottom: "15px", width: "100%" }} value={form.counselor_id} onChange={(e) => setForm({ ...form, counselor_id: e.target.value })}>
+                    <option value="">-- Choose Counselor --</option>
+                    {facultyList.filter(f => f.sub_role === 'counselor').map(f => (
+                       <option key={f.id} value={f.id}>{f.name}</option>
+                    ))}
+                  </select>
+
+                  <label>Select Class Teacher<RequiredStar /></label>
+                  <select required style={{ padding: "12px", borderRadius: "8px", border: "1px solid #e2e8f0", outline: "none", backgroundColor: "var(--bg-input)", color: "var(--text-main)", marginBottom: "15px", width: "100%" }} value={form.class_teacher_id} onChange={(e) => setForm({ ...form, class_teacher_id: e.target.value })}>
+                    <option value="">-- Choose Class Teacher --</option>
+                    {facultyList.filter(f => f.sub_role === 'class_teacher').map(f => (
+                       <option key={f.id} value={f.id}>{f.name}</option>
+                    ))}
+                  </select>
+
+                  <label>Select HOD<RequiredStar /></label>
+                  <select required style={{ padding: "12px", borderRadius: "8px", border: "1px solid #e2e8f0", outline: "none", backgroundColor: "var(--bg-input)", color: "var(--text-main)", marginBottom: "15px", width: "100%" }} value={form.hod_id} onChange={(e) => setForm({ ...form, hod_id: e.target.value })}>
+                    <option value="">-- Choose HOD --</option>
+                    {facultyList.filter(f => f.sub_role === 'hod').map(f => (
+                       <option key={f.id} value={f.id}>{f.name}</option>
+                    ))}
                   </select>
                 </>
               )}

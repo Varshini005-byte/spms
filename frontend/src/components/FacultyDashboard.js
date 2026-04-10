@@ -36,8 +36,8 @@ export default function FacultyDashboard() {
   const fetchRequests = useCallback(() => {
     const url =
       viewMode === "history"
-        ? `${API_BASE}/permissions?role=faculty&view=history`
-        : `${API_BASE}/permissions?role=faculty&sub_role=${subRole}`;
+        ? `${API_BASE}/permissions?role=faculty&view=history&id=${user.id}`
+        : `${API_BASE}/permissions?role=faculty&sub_role=${subRole}&id=${user.id}`;
     fetch(url)
       .then(r => r.json())
       .then(d => { if (d.success) setRequests(d.data); })
