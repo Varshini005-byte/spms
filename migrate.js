@@ -21,7 +21,11 @@ async function migrate() {
       ADD COLUMN IF NOT EXISTS hod_id INTEGER,
       ADD COLUMN IF NOT EXISTS department VARCHAR(100),
       ADD COLUMN IF NOT EXISTS section VARCHAR(20),
-      ADD COLUMN IF NOT EXISTS sub_role VARCHAR(50);
+      ADD COLUMN IF NOT EXISTS sub_role VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS roll_no VARCHAR(20) UNIQUE,
+      ADD COLUMN IF NOT EXISTS faculty_id VARCHAR(20) UNIQUE,
+      ADD COLUMN IF NOT EXISTS phone_no VARCHAR(15) UNIQUE,
+      ADD COLUMN IF NOT EXISTS parent_of_roll_no VARCHAR(20);
     `);
 
     // 2. Create Permissions table
