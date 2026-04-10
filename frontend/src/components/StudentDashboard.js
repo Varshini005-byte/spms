@@ -86,85 +86,100 @@ export default function StudentDashboard() {
 
     return (
       <>
-        <div className="stat-card">
-          <div><div className="stat-label">Total Requests</div><div className="stat-value">{stats.total}</div></div>
-          <div className="stat-icon"><ClipboardList size={28} color="#64748b" /></div>
-        </div>
-        <div className="stat-card">
-          <div><div className="stat-label">Pending</div><div className="stat-value">{stats.pending}</div></div>
-          <div className="stat-icon"><Clock size={28} color="#f59e0b" /></div>
-        </div>
-        <div className="stat-card">
-          <div><div className="stat-label">Approved</div><div className="stat-value">{stats.approved}</div></div>
-          <div className="stat-icon"><CheckCircle size={28} color="#10b981" /></div>
-        </div>
-        <div className="stat-card">
-          <div><div className="stat-label">Rejected</div><div className="stat-value">{stats.rejected}</div></div>
-          <div className="stat-icon"><XCircle size={28} color="#ef4444" /></div>
+        <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '20px'}}>
+          <div className="stat-card" style={{margin: 0}}>
+            <div><div className="stat-label">Pending</div><div className="stat-value">{stats.pending}</div></div>
+            <div className="stat-icon"><Clock size={24} color="#f59e0b" /></div>
+          </div>
+          <div className="stat-card" style={{margin: 0}}>
+            <div><div className="stat-label">Approved</div><div className="stat-value">{stats.approved}</div></div>
+            <div className="stat-icon"><CheckCircle size={24} color="#10b981" /></div>
+          </div>
         </div>
 
-        <div className="menu-list">
-          {menuOptions.map(opt => (
-            <div key={opt.name} className={`menu-item ${activeView === opt.name ? 'active' : ''}`} onClick={() => setActiveView(opt.name)}>
+        <div className="menu-list" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px', marginBottom: '25px'}}>
+          {menuOptions.filter(opt => opt.name !== 'Dashboard' && opt.name !== 'My Requests' && opt.name !== 'My Passes').map(opt => (
+            <div key={opt.name} className="menu-item" onClick={() => setActiveView(opt.name)} style={{flexDirection: 'column', height: '80px', justifyContent: 'center', textAlign: 'center'}}>
               <span className="menu-icon">{opt.icon}</span>
-              <span className="menu-text">{opt.name}</span>
+              <span className="menu-text" style={{fontSize: '0.75rem'}}>{opt.name}</span>
             </div>
           ))}
         </div>
+
+        <h3 className="form-title">Recent Request Flow</h3>
+        {requests.slice(0, 3).map(req => (
+          <div key={req.id} className="request-form-container" style={{marginBottom: 15, padding: '15px', borderLeft: '4px solid var(--primary)', borderRadius: '12px', background: 'var(--bg-app)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'}}>
+             {renderRequestItem(req)}
+          </div>
+        ))}
+        {requests.length > 3 && (
+          <button className="submit-btn" style={{background: 'transparent', color: 'var(--primary)', border: '1px solid var(--primary)', padding: '8px'}} onClick={() => setActiveView("My Requests")}>
+            View All History
+          </button>
+        )}
+        {requests.length === 0 && <p style={{textAlign: 'center', color: '#94a3b8'}}>No recent requests.</p>}
       </>
     );
   };
+
+  const renderRequestItem = (req) => (
+    <>
+      <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: 12}}>
+         <span style={{fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)'}}>{req.category}</span>
+         <span style={{fontSize: '0.75rem', color: 'var(--text-muted)'}}>{new Date(req.created_at).toLocaleDateString()}</span>
+      </div>
+      
+      <div className="status-stepper" style={{display: 'flex', justifyContent: 'space-between', marginTop: 5, position: 'relative'}}>
+        {[
+          { label: 'Coun.', status: req.status_counselor, name: req.c_name, key: 'status_counselor' },
+          { label: 'Tea.', status: req.status_class_teacher, name: req.t_name, key: 'status_class_teacher' },
+          { label: 'HOD', status: req.status_hod, name: req.h_name, key: 'status_hod' },
+          { label: 'War.', status: req.status_warden, name: req.w_name, key: 'status_warden' },
+          { label: 'Par.', status: req.status_parent, name: req.parent_name, key: 'status_parent' }
+        ].map((step, i) => {
+          const isRejectedHere = step.status === 'Rejected';
+          return (
+            <div key={i} style={{textAlign: 'center', flex: 1, position: 'relative', zIndex: 1}}>
+              <div style={{
+                width: 20, height: 20, borderRadius: '50%', margin: '0 auto',
+                background: step.status === 'Approved' ? '#10b981' : step.status === 'Pending' ? '#f59e0b' : step.status === 'Rejected' ? '#ef4444' : '#e2e8f0',
+                color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 700
+              }}>
+                {step.status === 'Approved' ? '✓' : step.status === 'Pending' ? '...' : i+1}
+              </div>
+              <div style={{fontSize: '0.55rem', fontWeight: 700, marginTop: 4, color: 'var(--text-main)'}}>{step.label}</div>
+              {step.status === 'Approved' && step.name && (
+                 <div style={{fontSize: '0.5rem', color: '#10b981', fontWeight: 500}}>{step.name.split(' ')[0]}</div>
+              )}
+              {isRejectedHere && (
+                 <div style={{fontSize: '0.5rem', color: '#ef4444', fontWeight: 500}}>Rejected {req.rejected_by ? `by ${req.rejected_by.split(' ')[0]}` : ''}</div>
+              )}
+              {step.status === 'Pending' && (
+                 <div style={{fontSize: '0.5rem', color: '#f59e0b', fontWeight: 500}}>Pending</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{marginTop: 15, padding: '10px', background: 'var(--bg-input)', borderRadius: 8, fontSize: '0.8rem'}}>
+        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+          <strong>Final Status:</strong> 
+          <span className={`status-badge ${req.final_status.toLowerCase().includes('approved') ? 'approved' : req.final_status.toLowerCase().includes('rejected') ? 'rejected' : 'pending'}`} style={{padding: '2px 8px', fontSize: '0.7rem'}}>
+            {req.final_status}
+          </span>
+        </div>
+      </div>
+    </>
+  );
 
   const renderMyRequests = () => (
     <div className="scroll-content" style={{padding: 0}}>
       <h3 className="form-title">Track My Requests</h3>
       {requests.map(req => (
         <div key={req.id} className="request-form-container" style={{marginBottom: 20, borderLeft: '4px solid var(--primary)'}}>
-          <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: 10}}>
-             <span style={{fontWeight: 700, fontSize: '0.9rem'}}>{req.category}</span>
-             <span style={{fontSize: '0.8rem', color: 'var(--text-muted)'}}>{new Date(req.created_at).toLocaleDateString()}</span>
-          </div>
-          
-          <div className="status-stepper" style={{display: 'flex', justifyContent: 'space-between', marginTop: 15, position: 'relative'}}>
-            {[
-              { label: 'Counselor', status: req.status_counselor, name: req.c_name },
-              { label: 'Teacher', status: req.status_class_teacher, name: req.t_name },
-              { label: 'HOD', status: req.status_hod, name: req.h_name },
-              { label: 'Warden', status: req.status_warden, name: req.w_name },
-              { label: 'Parent', status: req.status_parent, name: req.parent_name }
-            ].map((step, i) => (
-              <div key={i} style={{textAlign: 'center', flex: 1, position: 'relative', zIndex: 1}}>
-                <div style={{
-                  width: 24, height: 24, borderRadius: '50%', margin: '0 auto',
-                  background: step.status === 'Approved' ? '#10b981' : step.status === 'Pending' ? '#f59e0b' : step.status === 'Rejected' ? '#ef4444' : '#e2e8f0',
-                  color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 700
-                }}>
-                  {step.status === 'Approved' ? '✓' : step.status === 'Pending' ? '...' : i+1}
-                </div>
-                <div style={{fontSize: '0.6rem', fontWeight: 700, marginTop: 4, color: 'var(--text-main)'}}>{step.label}</div>
-                {step.status === 'Approved' && step.name && (
-                   <div style={{fontSize: '0.5rem', color: '#10b981', fontWeight: 500}}>By {step.name.split(' ')[0]}</div>
-                )}
-                {step.status === 'Rejected' && (
-                   <div style={{fontSize: '0.5rem', color: '#ef4444', fontWeight: 500}}>Rejected</div>
-                )}
-                {step.status === 'Pending' && (
-                   <div style={{fontSize: '0.5rem', color: '#f59e0b', fontWeight: 500}}>Awaiting</div>
-                )}
-              </div>
-            ))}
-          </div>
- Riverside          
-          <div style={{marginTop: 15, padding: '10px', background: 'var(--bg-input)', borderRadius: 8, fontSize: '0.85rem'}}>
-            <div style={{display: 'flex', justifyContent: 'space-between'}}>
-              <strong>Final Status:</strong> 
-              <span style={{color: req.final_status.includes('Approved') ? '#10b981' : req.final_status.includes('Rejected') ? '#ef4444' : '#f59e0b'}}>
-                {req.final_status}
-              </span>
-            </div>
-            {req.rejected_by && <div style={{marginTop: 5, fontSize: '0.75rem', color: '#ef4444'}}>Rejected by: {req.rejected_by}</div>}
-            {req.attachment_url && <div style={{marginTop: 5}}><a href={req.attachment_url.startsWith('http') ? req.attachment_url : `${API_BASE}${req.attachment_url}`} target="_blank" rel="noreferrer" style={{color: '#2563eb', textDecoration: 'none'}}>View Attachment</a></div>}
-          </div>
+          {renderRequestItem(req)}
+          {req.attachment_url && <div style={{marginTop: 10, fontSize: '0.75rem'}}><a href={req.attachment_url.startsWith('http') ? req.attachment_url : `${API_BASE}${req.attachment_url}`} target="_blank" rel="noreferrer" style={{color: '#2563eb', textDecoration: 'none'}}>View Attachment</a></div>}
         </div>
       ))}
       {requests.length === 0 && <p style={{textAlign: 'center', color: '#94a3b8'}}>No requests found.</p>}

@@ -97,7 +97,8 @@ export default function FacultyDashboard() {
             </div>
           ) : (
             <>
-              <h3 className="form-title">Pending Approvals ({requests.length})</h3>
+            <>
+              <h3 className="form-title">{viewMode === 'pending' ? 'Pending Approvals' : 'Approval History'} ({requests.length})</h3>
               {requests.map(req => (
                 <div key={req.id} className="request-form-container" style={{marginBottom: 15, borderLeft: req.priority === 'Urgent' ? '5px solid #ef4444' : '5px solid #e2e8f0'}}>
                   <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10}}>
@@ -112,28 +113,35 @@ export default function FacultyDashboard() {
                       { label: 'HOD', status: req.status_hod, name: req.h_name },
                       { label: 'War.', status: req.status_warden, name: req.w_name },
                       { label: 'Par.', status: req.status_parent, name: req.parent_name }
-                    ].map((step, i) => (
-                      <div key={i} style={{textAlign: 'center', flex: 1}}>
-                        <div style={{
-                          width: 14, height: 14, borderRadius: '50%', margin: '0 auto',
-                          background: step.status === 'Approved' ? '#10b981' : step.status === 'Pending' ? '#f59e0b' : step.status === 'Rejected' ? '#ef4444' : '#e2e8f0',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center'
-                        }}>
-                           {step.status === 'Approved' && <div style={{width: 6, height: 6, borderRadius: '50%', background: 'white'}}></div>}
+                    ].map((step, i) => {
+                      const isRejectedHere = step.status === 'Rejected';
+                      return (
+                        <div key={i} style={{textAlign: 'center', flex: 1}}>
+                          <div style={{
+                            width: 14, height: 14, borderRadius: '50%', margin: '0 auto',
+                            background: step.status === 'Approved' ? '#10b981' : step.status === 'Pending' ? '#f59e0b' : step.status === 'Rejected' ? '#ef4444' : '#e2e8f0',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                          }}>
+                             {step.status === 'Approved' && <div style={{width: 6, height: 6, borderRadius: '50%', background: 'white'}}></div>}
+                          </div>
+                          <div style={{fontSize: '0.6rem', fontWeight: 700, marginTop: 4, color: 'var(--text-main)'}}>{step.label}</div>
+                          {step.status === 'Approved' && step.name && (
+                             <div style={{fontSize: '0.5rem', color: '#10b981', fontWeight: 500}}>{step.name.split(' ')[0]}</div>
+                          )}
+                          {isRejectedHere && (
+                             <div style={{fontSize: '0.5rem', color: '#ef4444', fontWeight: 500}}>Rejected {req.rejected_by ? `by ${req.rejected_by.split(' ')[0]}` : ''}</div>
+                          )}
+                          {step.status === 'Pending' && <div style={{fontSize: '0.5rem', color: '#f59e0b'}}>Pending</div>}
                         </div>
-                        <div style={{fontSize: '0.6rem', fontWeight: 700, marginTop: 4, color: 'var(--text-main)'}}>{step.label}</div>
-                        {step.status === 'Approved' && step.name && (
-                           <div style={{fontSize: '0.5rem', color: '#10b981', fontWeight: 500}}>{step.name.split(' ')[0]}</div>
-                        )}
-                        {step.status === 'Pending' && <div style={{fontSize: '0.5rem', color: '#f59e0b'}}>Pending</div>}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
- Riverside
+
                   <div className="request-detail"><User size={16} /> <strong>Student:</strong> {req.name}</div>
                   <div className="request-detail"><Activity size={16} /> <strong>Attendance:</strong> {req.attendance}%</div>
                   <div className="request-detail"><FileText size={16} /> <strong>Reason:</strong> {req.reason}</div>
                   {req.attachment_url && <a href={req.attachment_url.startsWith('http') ? req.attachment_url : `${API_BASE}${req.attachment_url}`} target="_blank" rel="noreferrer" style={{fontSize: '0.85rem', color: '#2563eb', textDecoration: 'none'}}>View Document</a>}
+                  
                   {viewMode === 'pending' ? (
                     <div style={{marginTop: 15, display: 'flex', gap: 10}}>
                       <button className="submit-btn" style={{flex: 1, padding: 12, fontSize: '0.85rem'}} onClick={() => handleAction(req.id, "Approved")}>Approve</button>
@@ -141,12 +149,13 @@ export default function FacultyDashboard() {
                     </div>
                   ) : (
                     <div style={{marginTop: 15, padding: '10px', background: 'var(--bg-input)', borderRadius: 8, fontSize: '0.85rem', textAlign: 'center'}}>
-                      <strong>Final Status:</strong> <span style={{color: req.final_status.includes('Approved') ? '#10b981' : '#ef4444'}}>{req.final_status}</span>
+                      <strong>Final Status:</strong> <span style={{color: req.final_status.toLowerCase().includes('approved') ? '#10b981' : '#ef4444'}}>{req.final_status}</span>
                     </div>
                   )}
                 </div>
               ))}
-              {requests.length === 0 && <p style={{textAlign: 'center', color: '#94a3b8', marginTop: 40}}>No pending requests.</p>}
+              {requests.length === 0 && <p style={{textAlign: 'center', color: '#94a3b8', marginTop: 40}}>No {viewMode} requests found.</p>}
+            </>
             </>
           )}
         </div>

@@ -88,7 +88,8 @@ export default function WardenDashboard() {
             </div>
           ) : (
             <>
-              <h3 className="form-title">Hosteler Requests ({requests.length})</h3>
+            <>
+              <h3 className="form-title">{viewMode === 'pending' ? 'Hosteler Requests' : 'Approval History'} ({requests.length})</h3>
               {requests.map(req => (
                 <div key={req.id} className="request-form-container" style={{marginBottom: 15, borderLeft: req.priority === 'Urgent' ? '5px solid #ef4444' : '5px solid #10b981'}}>
                   <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10}}>
@@ -103,24 +104,30 @@ export default function WardenDashboard() {
                       { label: 'HOD', status: req.status_hod, name: req.h_name },
                       { label: 'Ward.', status: req.status_warden, name: req.w_name },
                       { label: 'Par.', status: req.status_parent, name: req.parent_name }
-                    ].map((step, i) => (
-                      <div key={i} style={{textAlign: 'center', flex: 1}}>
-                        <div style={{
-                          width: 14, height: 14, borderRadius: '50%', margin: '0 auto',
-                          background: step.status === 'Approved' ? '#10b981' : step.status === 'Pending' ? '#f59e0b' : step.status === 'Rejected' ? '#ef4444' : '#e2e8f0',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center'
-                        }}>
-                           {step.status === 'Approved' && <div style={{width: 6, height: 6, borderRadius: '50%', background: 'white'}}></div>}
+                    ].map((step, i) => {
+                      const isRejectedHere = step.status === 'Rejected';
+                      return (
+                        <div key={i} style={{textAlign: 'center', flex: 1}}>
+                          <div style={{
+                            width: 14, height: 14, borderRadius: '50%', margin: '0 auto',
+                            background: step.status === 'Approved' ? '#10b981' : step.status === 'Pending' ? '#f59e0b' : step.status === 'Rejected' ? '#ef4444' : '#e2e8f0',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                          }}>
+                             {step.status === 'Approved' && <div style={{width: 6, height: 6, borderRadius: '50%', background: 'white'}}></div>}
+                          </div>
+                          <div style={{fontSize: '0.6rem', fontWeight: 700, marginTop: 4, color: 'var(--text-main)'}}>{step.label}</div>
+                          {step.status === 'Approved' && step.name && (
+                             <div style={{fontSize: '0.5rem', color: '#10b981', fontWeight: 500}}>{step.name.split(' ')[0]}</div>
+                          )}
+                          {isRejectedHere && (
+                             <div style={{fontSize: '0.5rem', color: '#ef4444', fontWeight: 500}}>Rejected {req.rejected_by ? `by ${req.rejected_by.split(' ')[0]}` : ''}</div>
+                          )}
+                          {step.status === 'Pending' && <div style={{fontSize: '0.5rem', color: '#f59e0b'}}>Pending</div>}
                         </div>
-                        <div style={{fontSize: '0.6rem', fontWeight: 700, marginTop: 4, color: 'var(--text-main)'}}>{step.label}</div>
-                        {step.status === 'Approved' && step.name && (
-                           <div style={{fontSize: '0.5rem', color: '#10b981', fontWeight: 500}}>{step.name.split(' ')[0]}</div>
-                        )}
-                        {step.status === 'Pending' && <div style={{fontSize: '0.5rem', color: '#f59e0b'}}>Pending</div>}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
- Riverside
+
                   <div className="request-detail"><User size={16} /> <strong>Student:</strong> {req.name}</div>
                   <div className="request-detail"><Tag size={16} /> <strong>Category:</strong> {req.category}</div>
                   <div className="request-detail"><Activity size={16} /> <strong>Attendance:</strong> {req.attendance}%</div>
@@ -134,12 +141,14 @@ export default function WardenDashboard() {
                     </div>
                   ) : (
                     <div style={{marginTop: 15, padding: '10px', background: 'var(--bg-input)', borderRadius: 8, fontSize: '0.85rem', textAlign: 'center'}}>
-                      <strong>Final Status:</strong> <span style={{color: req.final_status.includes('Approved') ? '#10b981' : '#ef4444'}}>{req.final_status}</span>
+                      <strong>Final Status:</strong> <span style={{color: req.final_status.toLowerCase().includes('approved') ? '#10b981' : '#ef4444'}}>{req.final_status}</span>
                     </div>
                   )}
                 </div>
               ))}
-              {requests.length === 0 && <p style={{textAlign: 'center', color: '#94a3b8', marginTop: 40}}>No pending requests.</p>}
+              {requests.length === 0 && <p style={{textAlign: 'center', color: '#94a3b8', marginTop: 40}}>No {viewMode} requests found.</p>}
+            </>
+p>}
             </>
           )}
         </div>
