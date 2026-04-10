@@ -68,10 +68,15 @@ app.post("/register", async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const defaultResType = residence_type || 'day_scholar';
 
+    // Clean identifiers: replace empty strings with null to avoid UNIQUE constraint issues
+    const cleanRollNo = (role === 'student') ? roll_no : null;
+    const cleanFacultyId = (role === 'faculty') ? faculty_id : null;
+    const cleanPhoneNo = (role === 'warden' || role === 'parent' || role === 'student' || role === 'faculty') ? phone_no : null;
+
     await pool.query(
       `INSERT INTO users (name, email, password, role, attendance, residence_type, roll_no, faculty_id, phone_no, parent_of_roll_no) 
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-      [name, email, hashedPassword, role, 100, defaultResType, roll_no, faculty_id, phone_no, parent_of_roll_no]
+      [name, email, hashedPassword, role, 100, defaultResType, cleanRollNo, cleanFacultyId, cleanPhoneNo, parent_of_roll_no]
     );
     res.json({ success: true });
   } catch (err) {
