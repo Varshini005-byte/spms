@@ -18,10 +18,7 @@ export default function Register() {
     faculty_id: "",
     phone_no: "",
     parent_of_roll_no: "",
-    parent_email: "",
-    counselor_id: "",
-    class_teacher_id: "",
-    hod_id: ""
+    parent_email: ""
   });
 
   const [facultyList, setFacultyList] = useState([]);
@@ -133,29 +130,7 @@ export default function Register() {
                     <option value="hosteler">Hosteler</option>
                   </select>
 
-                  <label>Select Counselor<RequiredStar /></label>
-                  <select required style={{ padding: "12px", borderRadius: "8px", border: "1px solid #e2e8f0", outline: "none", backgroundColor: "var(--bg-input)", color: "var(--text-main)", marginBottom: "15px", width: "100%" }} value={form.counselor_id} onChange={(e) => setForm({ ...form, counselor_id: e.target.value })}>
-                    <option value="">-- Choose Counselor --</option>
-                    {facultyList.filter(f => f.sub_role === 'counselor').map(f => (
-                       <option key={f.id} value={f.id}>{f.name}</option>
-                    ))}
-                  </select>
 
-                  <label>Select Class Teacher<RequiredStar /></label>
-                  <select required style={{ padding: "12px", borderRadius: "8px", border: "1px solid #e2e8f0", outline: "none", backgroundColor: "var(--bg-input)", color: "var(--text-main)", marginBottom: "15px", width: "100%" }} value={form.class_teacher_id} onChange={(e) => setForm({ ...form, class_teacher_id: e.target.value })}>
-                    <option value="">-- Choose Class Teacher --</option>
-                    {facultyList.filter(f => f.sub_role === 'class_teacher').map(f => (
-                       <option key={f.id} value={f.id}>{f.name}</option>
-                    ))}
-                  </select>
-
-                  <label>Select HOD<RequiredStar /></label>
-                  <select required style={{ padding: "12px", borderRadius: "8px", border: "1px solid #e2e8f0", outline: "none", backgroundColor: "var(--bg-input)", color: "var(--text-main)", marginBottom: "15px", width: "100%" }} value={form.hod_id} onChange={(e) => setForm({ ...form, hod_id: e.target.value })}>
-                    <option value="">-- Choose HOD --</option>
-                    {facultyList.filter(f => f.sub_role === 'hod').map(f => (
-                       <option key={f.id} value={f.id}>{f.name}</option>
-                    ))}
-                  </select>
                 </>
               )}
 

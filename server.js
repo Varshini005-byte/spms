@@ -58,17 +58,7 @@ app.post("/register/send-otp", async (req, res) => {
 });
 
 app.post("/register", async (req, res) => {
-  const { name, email, password, role, residence_type, roll_no, faculty_id, phone_no, parent_of_roll_no, parent_email, counselor_id, class_teacher_id, hod_id } = req.body;
-
-  // Security check for parent
-  if (role === 'parent' && phone_no) {
-    try {
-      const studentCheck = await pool.query("SELECT * FROM users WHERE phone_no=$1 AND role='student'", [phone_no]);
-      if (studentCheck.rows.length > 0) {
-        return res.json({ success: false, message: "Security Alert: This phone number is registered to a student." });
-      }
-    } catch (err) { console.error(err); }
-  }
+  const { name, email, password, role, residence_type, roll_no, faculty_id, phone_no, parent_of_roll_no, parent_email } = req.body;
 
   try {
     let checkQuery = "SELECT * FROM users WHERE email=$1";
@@ -86,9 +76,17 @@ app.post("/register", async (req, res) => {
     const cleanFacultyId = (role === 'faculty') ? faculty_id : null;
     const cleanPhoneNo = phone_no || null;
     
-    let cId = role === 'student' && counselor_id ? parseInt(counselor_id, 10) : null;
-    let tId = role === 'student' && class_teacher_id ? parseInt(class_teacher_id, 10) : null;
-    let hId = role === 'student' && hod_id ? parseInt(hod_id, 10) : null;
+    // AUTOMATIC MENTOR LINKING for Students
+    let cId = null, tId = null, hId = null;
+    if (role === 'student') {
+       const coun = await pool.query("SELECT id FROM users WHERE sub_role='counselor' LIMIT 1");
+       const tea = await pool.query("SELECT id FROM users WHERE sub_role='class_teacher' LIMIT 1");
+       const hod = await pool.query("SELECT id FROM users WHERE sub_role='hod' LIMIT 1");
+       
+       cId = coun.rows[0]?.id || null;
+       tId = tea.rows[0]?.id || null;
+       hId = hod.rows[0]?.id || null;
+    }
 
     await pool.query(
       `INSERT INTO users (name, email, password, role, attendance, residence_type, roll_no, faculty_id, phone_no, parent_of_roll_no, parent_email, counselor_id, class_teacher_id, hod_id) 
@@ -96,20 +94,19 @@ app.post("/register", async (req, res) => {
       [name, email, hashedPassword, role, 100, defaultResType, cleanRollNo, cleanFacultyId, cleanPhoneNo, parent_of_roll_no, parent_email, cId, tId, hId]
     );
 
-    // AUTOMATED NOTIFICATION (Receipt style)
     try {
       const { sendFacultyNotificationEmail } = require("./utils/otpUtils");
-      await sendFacultyNotificationEmail(email, "[SPMS] Welcome to the System!", {
+      await sendFacultyNotificationEmail(email, "[SPMS] Welcome!", {
         studentName: name, rollNo: cleanRollNo || faculty_id || 'N/A', category: "Account Registration",
-        actionMsg: `Hello ${name}! Your SPMS account has been successfully created. You will now receive automated email notifications whenever a permission request is submitted or updated.`,
+        actionMsg: `Hello ${name}! Account created. Your Counselor, Teacher, and HOD have been automatically linked to your profile.`,
         reason: "Registration Success"
       });
-    } catch (e) { console.error("Welcome email fail:", e.message); }
+    } catch (e) {}
 
     res.json({ success: true });
   } catch (err) {
     console.error(err);
-    res.status(400).json({ success: false, message: "Registration failed ❌" });
+    res.status(400).json({ success: false, message: "Registration failed" });
   }
 });
 
