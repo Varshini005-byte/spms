@@ -10,6 +10,8 @@ export default function ParentDashboard() {
   const { theme, toggleTheme } = useTheme();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const [auth, setAuth] = useState(false);
+  const [requests, setRequests] = useState([]);
+  const [studentIdInput, setStudentIdInput] = useState(user?.parent_of_roll_no || "");
   const [viewMode, setViewMode] = useState("pending");
 
   useEffect(() => {
