@@ -289,8 +289,8 @@ app.put("/permissions/:id", async (req, res) => {
            q += `status_warden='Approved', w_name=$${idx++}, w_approved_at=NOW() WHERE id=$${idx}`;
            vals.push(name, permId);
         } else if (role === 'parent') {
-           q += `status_parent='Approved' WHERE id=$${idx}`;
-           vals.push(permId);
+           q += `status_parent='Approved', parent_name=$${idx++} WHERE id=$${idx}`;
+           vals.push(name || 'Parent', permId);
         }
      }
 

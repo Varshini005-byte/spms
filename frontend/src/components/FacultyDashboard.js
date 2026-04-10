@@ -115,15 +115,21 @@ export default function FacultyDashboard() {
                     ].map((step, i) => (
                       <div key={i} style={{textAlign: 'center', flex: 1}}>
                         <div style={{
-                          width: 12, height: 12, borderRadius: '50%', margin: '0 auto',
-                          background: step.status === 'Approved' ? '#10b981' : step.status === 'Pending' ? '#f59e0b' : step.status === 'Rejected' ? '#ef4444' : '#e2e8f0'
-                        }}></div>
-                        <div style={{fontSize: '0.6rem', fontWeight: 700, marginTop: 4}}>{step.label}</div>
-                        {step.name && <div style={{fontSize: '0.5rem', color: 'var(--text-muted)'}}>{step.name.split(' ')[0]}</div>}
+                          width: 14, height: 14, borderRadius: '50%', margin: '0 auto',
+                          background: step.status === 'Approved' ? '#10b981' : step.status === 'Pending' ? '#f59e0b' : step.status === 'Rejected' ? '#ef4444' : '#e2e8f0',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        }}>
+                           {step.status === 'Approved' && <div style={{width: 6, height: 6, borderRadius: '50%', background: 'white'}}></div>}
+                        </div>
+                        <div style={{fontSize: '0.6rem', fontWeight: 700, marginTop: 4, color: 'var(--text-main)'}}>{step.label}</div>
+                        {step.status === 'Approved' && step.name && (
+                           <div style={{fontSize: '0.5rem', color: '#10b981', fontWeight: 500}}>{step.name.split(' ')[0]}</div>
+                        )}
+                        {step.status === 'Pending' && <div style={{fontSize: '0.5rem', color: '#f59e0b'}}>Pending</div>}
                       </div>
                     ))}
                   </div>
-
+ Riverside
                   <div className="request-detail"><User size={16} /> <strong>Student:</strong> {req.name}</div>
                   <div className="request-detail"><Activity size={16} /> <strong>Attendance:</strong> {req.attendance}%</div>
                   <div className="request-detail"><FileText size={16} /> <strong>Reason:</strong> {req.reason}</div>

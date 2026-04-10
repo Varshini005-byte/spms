@@ -127,7 +127,7 @@ export default function StudentDashboard() {
           
           <div className="status-stepper" style={{display: 'flex', justifyContent: 'space-between', marginTop: 15, position: 'relative'}}>
             {[
-              { label: 'Counsellor', status: req.status_counselor, name: req.c_name },
+              { label: 'Counselor', status: req.status_counselor, name: req.c_name },
               { label: 'Teacher', status: req.status_class_teacher, name: req.t_name },
               { label: 'HOD', status: req.status_hod, name: req.h_name },
               { label: 'Warden', status: req.status_warden, name: req.w_name },
@@ -135,18 +135,26 @@ export default function StudentDashboard() {
             ].map((step, i) => (
               <div key={i} style={{textAlign: 'center', flex: 1, position: 'relative', zIndex: 1}}>
                 <div style={{
-                  width: 20, height: 20, borderRadius: '50%', margin: '0 auto',
+                  width: 24, height: 24, borderRadius: '50%', margin: '0 auto',
                   background: step.status === 'Approved' ? '#10b981' : step.status === 'Pending' ? '#f59e0b' : step.status === 'Rejected' ? '#ef4444' : '#e2e8f0',
-                  color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem'
+                  color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 700
                 }}>
                   {step.status === 'Approved' ? '✓' : step.status === 'Pending' ? '...' : i+1}
                 </div>
-                <div style={{fontSize: '0.55rem', fontWeight: 700, marginTop: 4, color: 'var(--text-main)'}}>{step.label}</div>
-                {step.name && <div style={{fontSize: '0.5rem', color: 'var(--text-muted)'}}>{step.name.split(' ')[0]}</div>}
+                <div style={{fontSize: '0.6rem', fontWeight: 700, marginTop: 4, color: 'var(--text-main)'}}>{step.label}</div>
+                {step.status === 'Approved' && step.name && (
+                   <div style={{fontSize: '0.5rem', color: '#10b981', fontWeight: 500}}>By {step.name.split(' ')[0]}</div>
+                )}
+                {step.status === 'Rejected' && (
+                   <div style={{fontSize: '0.5rem', color: '#ef4444', fontWeight: 500}}>Rejected</div>
+                )}
+                {step.status === 'Pending' && (
+                   <div style={{fontSize: '0.5rem', color: '#f59e0b', fontWeight: 500}}>Awaiting</div>
+                )}
               </div>
             ))}
           </div>
-          
+ Riverside          
           <div style={{marginTop: 15, padding: '10px', background: 'var(--bg-input)', borderRadius: 8, fontSize: '0.85rem'}}>
             <div style={{display: 'flex', justifyContent: 'space-between'}}>
               <strong>Final Status:</strong> 
