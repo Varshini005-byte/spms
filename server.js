@@ -120,7 +120,7 @@ app.post("/login", async (req, res) => {
 
 // ================= PERMISSIONS =================
 app.post("/permissions/request", upload.single("attachment"), async (req, res) => {
-  const { student_id, category, reason } = req.body;
+  const { student_id, category, reason, is_emergency } = req.body;
   const attachmentUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
   try {
@@ -133,7 +133,7 @@ app.post("/permissions/request", upload.single("attachment"), async (req, res) =
     // --- SMART LOGIC ---
     let priority = "Normal";
     const urgentKeywords = ["hospital", "emergency", "sick", "accident", "death", "urgent"];
-    if (urgentKeywords.some(word => reason.toLowerCase().includes(word))) {
+    if (is_emergency === 'true' || is_emergency === true || urgentKeywords.some(word => reason.toLowerCase().includes(word))) {
       priority = "Urgent";
     }
 

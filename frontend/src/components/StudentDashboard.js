@@ -12,7 +12,7 @@ export default function StudentDashboard() {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const [activeView, setActiveView] = useState("Dashboard");
   const [requests, setRequests] = useState([]);
-  const [form, setForm] = useState({ reason: "", attachment: null });
+  const [form, setForm] = useState({ reason: "", attachment: null, isEmergency: false });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notification, setNotification] = useState(null);
 
@@ -47,6 +47,7 @@ export default function StudentDashboard() {
     formData.append("student_id", user.id);
     formData.append("category", activeView);
     formData.append("reason", form.reason);
+    formData.append("is_emergency", form.isEmergency);
     if (form.attachment) formData.append("attachment", form.attachment);
 
     try {
@@ -60,7 +61,7 @@ export default function StudentDashboard() {
           message: data.autoApproved ? "Auto-Approved! Check 'My Passes' ✅" : "Request Submitted Successfully ✅",
           type: "success"
         });
-        setForm({ reason: "", attachment: null });
+        setForm({ reason: "", attachment: null, isEmergency: false });
         fetchHistory();
         setTimeout(() => {
           setNotification(null);
@@ -234,6 +235,19 @@ export default function StudentDashboard() {
             }}
           >
             <MapPin size={18} /> {form.attachment ? form.attachment.name : "Choose File"}
+          </label>
+        </div>
+
+        <div style={{ marginTop: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <input 
+            type="checkbox" 
+            id="emergency-check" 
+            checked={form.isEmergency} 
+            onChange={(e) => setForm({...form, isEmergency: e.target.checked})} 
+            style={{ width: '18px', height: '18px', accentColor: '#ef4444' }}
+          />
+          <label htmlFor="emergency-check" style={{ color: '#ef4444', fontWeight: 'bold', margin: 0, fontSize: '0.85rem' }}>
+            Mark as Emergency (Direct HOD Approval)
           </label>
         </div>
 
