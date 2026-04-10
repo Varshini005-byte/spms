@@ -33,7 +33,7 @@ const pool = new Pool({
 // Mount Parent OTP routes
 app.use(parentOtpRoutes(pool));
 
-app.get("/", (req, res) => { res.send("Backend Running 🚀"); });
+
 
 // ================= REGISTER =================
 app.post("/register", async (req, res) => {
