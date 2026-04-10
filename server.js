@@ -406,7 +406,19 @@ app.put("/permissions/:id", async (req, res) => {
   }
 });
 
+app.put("/permissions/:id/escalate", async (req, res) => {
+  const permId = req.params.id;
+  try {
+     await pool.query("UPDATE permissions SET priority='Urgent' WHERE id=$1", [permId]);
+     res.json({ success: true, message: "Request escalated successfully" });
+  } catch (err) {
+     console.error(err);
+     res.status(500).json({ success: false });
+  }
+});
+
 // ================= NOTIFICATIONS =================
+
 app.get("/notifications", async (req, res) => {
   const { faculty_id } = req.query;
   try {
