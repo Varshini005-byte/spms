@@ -102,6 +102,27 @@ async function migrate() {
       ADD COLUMN IF NOT EXISTS rejected_by VARCHAR(100);
     `);
 
+    // 3. Create faculty notifications table
+    console.log("Creating faculty_notifications table...");
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS faculty_notifications (
+        id SERIAL PRIMARY KEY,
+        faculty_id INTEGER REFERENCES users(id),
+        permission_id INTEGER REFERENCES permissions(id),
+        message TEXT,
+        is_read BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // 4. Add hod_bypass column to permissions
+    console.log("Adding hod_bypass column to permissions...");
+    await pool.query(`
+      ALTER TABLE permissions
+      ADD COLUMN IF NOT EXISTS hod_bypass BOOLEAN DEFAULT FALSE,
+      ADD COLUMN IF NOT EXISTS parent_name VARCHAR(100);
+    `);
+
     console.log("Migrations successfully completed!");
     process.exit(0);
   } catch (err) {

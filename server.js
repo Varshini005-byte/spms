@@ -220,9 +220,11 @@ app.get("/permissions", async (req, res) => {
          if (subRole === 'counselor') {
             queryStr += ` WHERE p.status_counselor = 'Pending'`;
          } else if (subRole === 'class_teacher') {
-            queryStr += ` WHERE p.status_class_teacher = 'Pending' AND p.status_counselor = 'Approved'`;
+            // Class teacher sees their pending queue OR already-bypassed ones for awareness
+            queryStr += ` WHERE p.status_class_teacher = 'Pending' AND (p.status_counselor = 'Approved' OR p.hod_bypass = TRUE)`;
          } else if (subRole === 'hod') {
-            queryStr += ` WHERE p.status_hod = 'Pending' AND p.status_class_teacher = 'Approved'`;
+            // HOD sees: normal queue (counselor+teacher approved) OR urgent emergency requests that need direct approval
+            queryStr += ` WHERE p.status_hod = 'Pending' AND (p.status_class_teacher = 'Approved' OR (p.priority = 'Urgent' AND p.final_status = 'Pending'))`;
          }
        }
        queryStr += ` ORDER BY p.priority DESC, p.created_at DESC`;
@@ -254,7 +256,7 @@ app.get("/permissions", async (req, res) => {
 
 app.put("/permissions/:id", async (req, res) => {
   const permId = req.params.id;
-  const { role, sub_role, action, name } = req.body; 
+  const { role, sub_role, action, name, hod_id } = req.body; 
   try {
      const permRes = await pool.query("SELECT * FROM permissions WHERE id=$1", [permId]);
      if (permRes.rows.length === 0) return res.json({ success: false });
@@ -280,11 +282,72 @@ app.put("/permissions/:id", async (req, res) => {
            q += `status_counselor='Approved', c_name=$${idx++}, c_approved_at=NOW(), status_class_teacher='Pending' WHERE id=$${idx}`;
            vals.push(name, permId);
         } else if (sub_role === 'class_teacher') {
-           if (p.status_counselor !== 'Approved') return res.json({ success: false, message: "Awaiting Counselor approval" });
+           if (p.status_counselor !== 'Approved' && !p.hod_bypass) return res.json({ success: false, message: "Awaiting Counselor approval" });
            q += `status_class_teacher='Approved', t_name=$${idx++}, t_approved_at=NOW(), status_hod='Pending' WHERE id=$${idx}`;
            vals.push(name, permId);
         } else if (sub_role === 'hod') {
-           if (p.status_class_teacher !== 'Approved') return res.json({ success: false, message: "Awaiting Class Teacher approval" });
+           // HOD can bypass if leave is Urgent/Emergency
+           const isEmergency = p.priority === 'Urgent';
+           const normalQueueReady = p.status_class_teacher === 'Approved';
+
+           if (!normalQueueReady && !isEmergency) {
+             return res.json({ success: false, message: "Awaiting Class Teacher approval" });
+           }
+
+           if (isEmergency && !normalQueueReady) {
+             // HOD EMERGENCY BYPASS: mark counselor & class_teacher as bypassed
+             q += `status_hod='Approved', h_name=$${idx++}, h_approved_at=NOW(), hod_bypass=TRUE, ` +
+                  `status_counselor=CASE WHEN status_counselor='Pending' THEN 'Bypassed' ELSE status_counselor END, ` +
+                  `status_class_teacher=CASE WHEN status_class_teacher='Pending' THEN 'Bypassed' ELSE status_class_teacher END ` +
+                  `WHERE id=$${idx}`;
+             vals.push(name, permId);
+
+             await pool.query(q, vals);
+
+             // Send notifications to counselor and class teacher about HOD bypass
+             try {
+               // Get student details
+               const studentInfo = await pool.query(
+                 `SELECT u.name, u.roll_no, 
+                         (SELECT id FROM users WHERE sub_role='counselor' LIMIT 1) AS counselor_id,
+                         (SELECT id FROM users WHERE sub_role='class_teacher' LIMIT 1) AS teacher_id
+                  FROM users u WHERE u.id = $1`, [p.student_id]
+               );
+               const si = studentInfo.rows[0];
+               const msg = `🚨 HOD Emergency Bypass: ${name} directly approved an URGENT leave for student ${si.name} (${si.roll_no}). Your approval was bypassed for emergency. Category: ${p.category}. Reason: "${p.reason.substring(0, 80)}..."` ;
+               if (si.counselor_id) {
+                 await pool.query(
+                   `INSERT INTO faculty_notifications (faculty_id, permission_id, message) VALUES ($1, $2, $3)`,
+                   [si.counselor_id, permId, msg]
+                 );
+               }
+               if (si.teacher_id) {
+                 await pool.query(
+                   `INSERT INTO faculty_notifications (faculty_id, permission_id, message) VALUES ($1, $2, $3)`,
+                   [si.teacher_id, permId, msg]
+                 );
+               }
+             } catch (notifErr) {
+               console.error("[Notification] Failed to create bypass notifications:", notifErr.message);
+             }
+
+             // Check final approval after bypass
+             const check2 = await pool.query("SELECT * FROM permissions WHERE id=$1", [permId]);
+             const up2 = check2.rows[0];
+             if (up2.final_status === 'Pending') {
+               const cOk = ['N/A','Approved','Bypassed'].includes(up2.status_counselor);
+               const tOk = ['N/A','Approved','Bypassed'].includes(up2.status_class_teacher);
+               const hOk = up2.status_hod === 'Approved';
+               const wOk = ['N/A','Approved'].includes(up2.status_warden);
+               const pOk = ['N/A','Approved'].includes(up2.status_parent);
+               if (cOk && tOk && hOk && wOk && pOk) {
+                 await pool.query("UPDATE permissions SET final_status='Approved' WHERE id=$1", [permId]);
+               }
+             }
+             return res.json({ success: true, bypassed: true });
+           }
+
+           // Normal HOD approval (queue was ready)
            q += `status_hod='Approved', h_name=$${idx++}, h_approved_at=NOW() WHERE id=$${idx}`;
            vals.push(name, permId);
         } else if (role === 'warden') {
@@ -303,8 +366,8 @@ app.put("/permissions/:id", async (req, res) => {
      const check = await pool.query("SELECT * FROM permissions WHERE id=$1", [permId]);
      const up = check.rows[0];
      if (up.final_status === 'Pending') {
-        const cOk = (up.status_counselor === 'N/A' || up.status_counselor === 'Approved');
-        const tOk = (up.status_class_teacher === 'N/A' || up.status_class_teacher === 'Approved');
+        const cOk = ['N/A','Approved','Bypassed'].includes(up.status_counselor);
+        const tOk = ['N/A','Approved','Bypassed'].includes(up.status_class_teacher);
         const hOk = (up.status_hod === 'N/A' || up.status_hod === 'Approved');
         const wOk = (up.status_warden === 'N/A' || up.status_warden === 'Approved');
         const pOk = (up.status_parent === 'N/A' || up.status_parent === 'Approved');
@@ -317,6 +380,73 @@ app.put("/permissions/:id", async (req, res) => {
   } catch (err) {
      console.error(err);
      res.status(500).json({ success: false });
+  }
+});
+
+// ================= NOTIFICATIONS =================
+app.get("/notifications", async (req, res) => {
+  const { faculty_id } = req.query;
+  try {
+    const result = await pool.query(
+      `SELECT fn.*, 
+              p.category, p.reason, p.priority, p.final_status,
+              u.name AS student_name, u.roll_no
+       FROM faculty_notifications fn
+       JOIN permissions p ON fn.permission_id = p.id
+       JOIN users u ON p.student_id = u.id
+       WHERE fn.faculty_id = $1
+       ORDER BY fn.created_at DESC
+       LIMIT 50`,
+      [faculty_id]
+    );
+    res.json({ success: true, data: result.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false });
+  }
+});
+
+app.post("/notifications/read", async (req, res) => {
+  const { faculty_id } = req.body;
+  try {
+    await pool.query(
+      `UPDATE faculty_notifications SET is_read = TRUE WHERE faculty_id = $1`,
+      [faculty_id]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false });
+  }
+});
+
+// ================= STUDENT LOOKUP BY ROLL NO (for counselor/class_teacher) =================
+app.get("/permissions/student-lookup", async (req, res) => {
+  const { roll_no, sub_role, view } = req.query;
+  try {
+    // Find student by roll_no
+    const studentRes = await pool.query(
+      `SELECT id, name, roll_no, attendance, residence_type FROM users WHERE UPPER(roll_no) = UPPER($1) AND role='student'`,
+      [roll_no]
+    );
+    if (studentRes.rows.length === 0) {
+      return res.json({ success: false, message: "Student not found" });
+    }
+    const student = studentRes.rows[0];
+
+    // Get all permissions for that student
+    let queryStr = `
+      SELECT p.*, u.name, u.attendance, u.residence_type, u.roll_no
+      FROM permissions p
+      JOIN users u ON p.student_id = u.id
+      WHERE p.student_id = $1
+      ORDER BY p.created_at DESC
+    `;
+    const perms = await pool.query(queryStr, [student.id]);
+    res.json({ success: true, student, data: perms.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false });
   }
 });
 
