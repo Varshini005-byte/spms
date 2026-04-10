@@ -14,7 +14,7 @@ export default function Home() {
 
     const handleLogin = async () => {
       try {
-        const res = await fetch("https://spms-ie7g.onrender.com/login", {
+        const res = await fetch("/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ identifier: idInput, password: passInput, role: role })

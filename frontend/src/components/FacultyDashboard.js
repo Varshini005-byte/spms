@@ -20,8 +20,8 @@ export default function FacultyDashboard() {
   const fetchRequests = () => {
     const subRole = user.sub_role || 'counselor';
     const url = viewMode === 'history' 
-      ? `https://spms-ie7g.onrender.com/permissions?role=faculty&view=history`
-      : `https://spms-ie7g.onrender.com/permissions?role=faculty&sub_role=${subRole}`;
+      ? `/permissions?role=faculty&view=history`
+      : `/permissions?role=faculty&sub_role=${subRole}`;
     
     fetch(url)
       .then(res => res.json())
@@ -35,7 +35,7 @@ export default function FacultyDashboard() {
 
   const handleAction = async (id, action) => {
     try {
-      const res = await fetch(`https://spms-ie7g.onrender.com/permissions/${id}`, {
+      const res = await fetch(`/permissions/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 

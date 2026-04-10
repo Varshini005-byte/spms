@@ -15,8 +15,8 @@ export default function WardenDashboard() {
 
   const fetchRequests = () => {
     const url = viewMode === 'history' 
-      ? `https://spms-ie7g.onrender.com/permissions?role=warden&view=history`
-      : `https://spms-ie7g.onrender.com/permissions?role=warden`;
+      ? `/permissions?role=warden&view=history`
+      : `/permissions?role=warden`;
 
     fetch(url)
       .then(res => res.json())
@@ -30,7 +30,7 @@ export default function WardenDashboard() {
 
   const handleAction = async (id, action) => {
     try {
-      const res = await fetch(`https://spms-ie7g.onrender.com/permissions/${id}`, {
+      const res = await fetch(`/permissions/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ role: "warden", action })

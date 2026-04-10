@@ -10,7 +10,14 @@ export default function ParentDashboard() {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const [auth, setAuth] = useState(false);
   const [requests, setRequests] = useState([]);
-  const [studentIdInput, setStudentIdInput] = useState("");
+  const [studentIdInput, setStudentIdInput] = useState(user?.parent_of_roll_no || "");
+
+  useEffect(() => {
+    if (user?.parent_of_roll_no && !auth) {
+        setAuth(true);
+        fetchRequests(user.parent_of_roll_no);
+    }
+  }, []);
 
   const loginWithMockOTP = () => {
     if(studentIdInput) {
@@ -26,7 +33,7 @@ export default function ParentDashboard() {
   };
 
   const fetchRequests = (id) => {
-    fetch(`https://spms-ie7g.onrender.com/permissions?role=parent&id=${id}`)
+    fetch(`/permissions?role=parent&id=${id}`)
       .then(res => res.json())
       .then(data => { if(data.success) setRequests(data.data) })
       .catch(err => console.error(err));
@@ -36,7 +43,7 @@ export default function ParentDashboard() {
     if (action === "Rejected") {
         // Just reject directly (no OTP needed for rejection usually, or up to you)
         try {
-          const res = await fetch(`https://spms-ie7g.onrender.com/permissions/${req.id}`, {
+          const res = await fetch(`/permissions/${req.id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ role: "parent", action, name: user.name })
@@ -55,7 +62,7 @@ export default function ParentDashboard() {
     if (!otpCode) return;
 
     try {
-      const res = await fetch(`https://spms-ie7g.onrender.com/parent/verify-otp`, {
+      const res = await fetch(`/parent/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -78,7 +85,7 @@ export default function ParentDashboard() {
 
   const handleResendOtp = async (reqId, studentId) => {
     try {
-      const res = await fetch(`https://spms-ie7g.onrender.com/parent/resend-otp`, {
+      const res = await fetch(`/parent/resend-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ student_id: studentId, permission_id: reqId })
@@ -158,7 +165,7 @@ export default function ParentDashboard() {
               <div className="request-detail"><Tag size={16} /> <strong>Category:</strong> {req.category}</div>
               <div className="request-detail"><Activity size={16} /> <strong>Attendance:</strong> {req.attendance}% {req.attendance < 75 && <span style={{color: '#f59e0b', display: 'inline-flex', alignItems: 'center', gap: 4}}><AlertTriangle size={16} /> LOW</span>}</div>
               <div className="request-detail"><FileText size={16} /> <strong>Reason:</strong> {req.reason}</div>
-              {req.attachment_url && <a href={`https://spms-ie7g.onrender.com${req.attachment_url}`} target="_blank" rel="noreferrer" style={{fontSize: '0.85rem', color: '#2563eb', textDecoration: 'none'}}>View Document</a>}
+              {req.attachment_url && <a href={req.attachment_url} target="_blank" rel="noreferrer" style={{fontSize: '0.85rem', color: '#2563eb', textDecoration: 'none'}}>View Document</a>}
               <div style={{marginTop: 15, display: 'flex', flexWrap: 'wrap', gap: 10}}>
                 <button className="submit-btn" style={{flex: 1, padding: 12, fontSize: '0.85rem', background: '#10b981'}} onClick={() => handleAction(req, "Approved")}>Approve</button>
                 <button className="submit-btn" style={{flex: 1, padding: 12, fontSize: '0.85rem', background: "#ef4444"}} onClick={() => handleAction(req, "Rejected")}>Reject</button>

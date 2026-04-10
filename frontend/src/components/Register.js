@@ -40,7 +40,7 @@ export default function Register() {
     }
 
     try {
-      const res = await fetch("https://spms-ie7g.onrender.com/register", {
+      const res = await fetch("/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form)

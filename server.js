@@ -235,7 +235,7 @@ app.get("/permissions", async (req, res) => {
        queryStr += ` ORDER BY p.priority DESC, p.created_at DESC`;
     } else if (role === 'parent') {
        // Allow parents to see the request as soon as it exists, but they can only approve when academic is done
-       queryStr += ` WHERE p.status_parent = 'Pending' AND p.student_id = (SELECT id FROM users WHERE roll_no = $1 LIMIT 1) ORDER BY p.created_at DESC`;
+       queryStr += ` WHERE p.status_parent = 'Pending' AND p.student_id = (SELECT id FROM users WHERE UPPER(roll_no) = UPPER($1) LIMIT 1) ORDER BY p.created_at DESC`;
        values = [id]; 
     } else if (role === 'admin') {
        queryStr += ` ORDER BY p.created_at DESC`;
