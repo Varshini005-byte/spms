@@ -319,6 +319,33 @@ app.put("/permissions/:id", async (req, res) => {
 });
 
 // ================= OTP VERIFICATION =================
+app.post("/parent/resend-otp", async (req, res) => {
+  const { student_id, permission_id } = req.body;
+  const { generateOTP, sendOtpEmail } = require("./utils/otpUtils");
+  const otpDb = require("./db/parentOtpQueries");
+
+  try {
+    const student = await otpDb.getStudentWithParent(pool, student_id);
+    if (!student || !student.parent_email) {
+      return res.json({ success: false, message: "No parent email found ❌" });
+    }
+
+    const otp = generateOTP();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
+    
+    // Invalidate old and create new
+    await otpDb.invalidatePreviousOtps(pool, student_id, permission_id);
+    await otpDb.createOtpRecord(pool, student_id, permission_id, student.parent_email, otp, expiresAt);
+    
+    await sendOtpEmail(student.parent_email, otp, student.name);
+    
+    res.json({ success: true, message: "New OTP sent to email! 📩" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Failed to resend OTP" });
+  }
+});
+
 app.post("/parent/verify-otp", async (req, res) => {
   const { student_id, otp, permission_id } = req.body;
   const otpDb = require("./db/parentOtpQueries");

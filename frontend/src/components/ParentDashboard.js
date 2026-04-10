@@ -76,21 +76,35 @@ export default function ParentDashboard() {
     }
   };
 
+  const handleResendOtp = async (reqId, studentId) => {
+    try {
+      const res = await fetch(`https://spms-ie7g.onrender.com/parent/resend-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ student_id: studentId, permission_id: reqId })
+      });
+      const data = await res.json();
+      alert(data.message || "Failed to resend OTP ❌");
+    } catch {
+      alert("Error resending OTP ⚠️");
+    }
+  };
+
   if(!auth) {
     return (
       <div className="app-container">
         <div className="mobile-wrapper" style={{justifyContent: 'center', background: 'var(--bg-app)'}}>
           <div className="scroll-content">
             <div className="request-form-container" style={{textAlign: 'center'}}>
-               <h3 className="form-title" style={{color: '#3498db'}}>Parent Virtual Login</h3>
+               <h3 className="form-title" style={{color: '#3498db'}}>Parent Portal Login</h3>
                <p style={{fontSize: '0.85rem', color: 'var(--text-muted)'}}>Enter Student Roll No to review their requests.</p>
-               <input type="text" placeholder="Roll No (e.g. 21B01...)" className="custom-form" onChange={(e) => setStudentIdInput(e.target.value.toUpperCase())} style={{width: '100%', padding: 12, margin: '15px 0', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-input)', color: 'var(--text-main)'}} />
+               <input type="text" placeholder="Student Roll No (e.g. 21B01A0501)" className="custom-form" onChange={(e) => setStudentIdInput(e.target.value.toUpperCase())} style={{width: '100%', padding: 12, margin: '15px 0', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-input)', color: 'var(--text-main)'}} />
                <button className="submit-btn" style={{width: '100%'}} onClick={() => {
                    if(studentIdInput) {
                        setAuth(true);
                        fetchRequests(studentIdInput);
                    }
-               }}>Login</button>
+               }}>Access Portal</button>
                <div style={{marginTop: 20, display: 'flex', justifyContent: 'center', gap: 10}}>
                  <button className="logout-btn" onClick={toggleTheme}>
                    {theme === 'light' ? <Moon size={18}/> : <Sun size={18}/>}
@@ -145,9 +159,10 @@ export default function ParentDashboard() {
               <div className="request-detail"><Activity size={16} /> <strong>Attendance:</strong> {req.attendance}% {req.attendance < 75 && <span style={{color: '#f59e0b', display: 'inline-flex', alignItems: 'center', gap: 4}}><AlertTriangle size={16} /> LOW</span>}</div>
               <div className="request-detail"><FileText size={16} /> <strong>Reason:</strong> {req.reason}</div>
               {req.attachment_url && <a href={`https://spms-ie7g.onrender.com${req.attachment_url}`} target="_blank" rel="noreferrer" style={{fontSize: '0.85rem', color: '#2563eb', textDecoration: 'none'}}>View Document</a>}
-              <div style={{marginTop: 15, display: 'flex', gap: 10}}>
+              <div style={{marginTop: 15, display: 'flex', flexWrap: 'wrap', gap: 10}}>
                 <button className="submit-btn" style={{flex: 1, padding: 12, fontSize: '0.85rem', background: '#10b981'}} onClick={() => handleAction(req, "Approved")}>Approve</button>
                 <button className="submit-btn" style={{flex: 1, padding: 12, fontSize: '0.85rem', background: "#ef4444"}} onClick={() => handleAction(req, "Rejected")}>Reject</button>
+                <button className="back-btn" style={{width: '100%', padding: '8px', fontSize: '0.75rem', background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)'}} onClick={() => handleResendOtp(req.id, req.student_id)}>Send New OTP 📩</button>
               </div>
             </div>
           ))}
