@@ -13,21 +13,38 @@ function generateOTP() {
 let transporterInstance = null;
 
 /**
+ * Log email events to database for remote debugging.
+ */
+async function logEmailToDb(source, message, error = null) {
+  try {
+    const { Pool } = require("pg");
+    const pool = new Pool({ connectionString: process.env.DB_URL, ssl: { rejectUnauthorized: false } });
+    await pool.query(
+      "INSERT INTO system_logs (source, message, error) VALUES ($1, $2, $3)",
+      [source, message, error ? error.toString() : null]
+    );
+    await pool.end();
+  } catch (e) {
+    console.error("Critical: Failed to log to DB:", e.message);
+  }
+}
+
+/**
  * Create or return a reusable Nodemailer transporter (Gmail SMTP).
  */
 function getTransporter() {
   if (transporterInstance) return transporterInstance;
 
+  console.log("[Email] Initializing global transporter instance...");
   transporterInstance = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
-    secure: true, // Use SSL/TLS
+    secure: true,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
-    // Add connection timeout for better error handling
-    connectionTimeout: 10000, 
+    connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 10000,
   });
@@ -90,11 +107,11 @@ async function sendOtpEmail(to, otp, studentName, category = "Permission") {
       bcc: process.env.EMAIL_USER // Always send a copy to the system account for tracking
     });
     console.log(`[Email Success] Parent OTP sent to: ${to} (ID: ${result.messageId})`);
-    console.log(`[OTP DEBUG] Sent to: ${to}`);
-    console.log(`[OTP CODE]  👉  ${otp}  👈`);
+    await logEmailToDb("Parent OTP", `Successfully sent to ${to}`, null);
     return result;
   } catch (err) {
     console.error(`[Email Failure] Parent OTP failed for ${to}:`, err.message);
+    await logEmailToDb("Parent OTP", `Failed to send to ${to}`, err.message);
     throw err;
   }
 }
@@ -151,9 +168,11 @@ async function sendFacultyNotificationEmail(to, subject, details) {
       bcc: process.env.EMAIL_USER
     });
     console.log(`[Email Success] Faculty notification sent to: ${to} (ID: ${result.messageId})`);
+    await logEmailToDb("Faculty Notif", `Successfully sent to ${to}`, null);
     return result;
   } catch (err) {
     console.error(`[Email Failure] Faculty notification failed for ${to}:`, err.message);
+    await logEmailToDb("Faculty Notif", `Failed to send to ${to}`, err.message);
     throw err;
   }
 }
@@ -205,9 +224,11 @@ async function sendStatusNotificationEmail(to, subject, details) {
       bcc: process.env.EMAIL_USER
     });
     console.log(`[Email Success] Status update sent to: ${to} (ID: ${result.messageId})`);
+    await logEmailToDb("Status Update", `Successfully sent to ${to}`, null);
     return result;
   } catch (err) {
     console.error(`[Email Failure] Status update failed for ${to}:`, err.message);
+    await logEmailToDb("Status Update", `Failed to send to ${to}`, err.message);
     throw err;
   }
 }
@@ -255,11 +276,13 @@ async function sendRegistrationOtpEmail(to, otp) {
       bcc: process.env.EMAIL_USER
     });
     console.log(`[Email Success] Registration OTP sent to: ${to} (ID: ${result.messageId})`);
+    await logEmailToDb("Reg OTP", `Successfully sent to ${to}`, null);
     return result;
   } catch (err) {
     console.error(`[Email Failure] Registration OTP failed for ${to}:`, err.message);
+    await logEmailToDb("Reg OTP", `Failed to send to ${to}`, err.message);
     throw err;
   }
 }
 
-module.exports = { generateOTP, sendOtpEmail, sendFacultyNotificationEmail, sendRegistrationOtpEmail, sendStatusNotificationEmail };
+module.exports = { generateOTP, sendOtpEmail, sendFacultyNotificationEmail, sendRegistrationOtpEmail, sendStatusNotificationEmail, logEmailToDb };
