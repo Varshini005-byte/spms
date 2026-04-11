@@ -44,7 +44,8 @@ function getTransporter() {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
-    // Force IPv4 and increase timeouts for cloud network stability
+    // Force IPv4 (family: 4) to bypass Render's IPv6 networking issues
+    family: 4,
     connectionTimeout: 30000, 
     greetingTimeout: 30000,
     socketTimeout: 30000,
