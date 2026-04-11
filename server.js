@@ -96,12 +96,28 @@ app.post("/register", async (req, res) => {
 
     try {
       const { sendFacultyNotificationEmail } = require("./utils/otpUtils");
-      await sendFacultyNotificationEmail(email, "[SPMS] Welcome!", {
-        studentName: name, rollNo: cleanRollNo || faculty_id || 'N/A', category: "Account Registration",
-        actionMsg: `Hello ${name}! Account created. Your Counselor, Teacher, and HOD have been automatically linked to your profile.`,
+      
+      // 1. Notify Student
+      await sendFacultyNotificationEmail(email, "[SPMS] Welcome to BVRIT SPMS!", {
+        studentName: name, rollNo: cleanRollNo || cleanFacultyId || 'N/A', category: "Account Registration",
+        actionMsg: `Hello ${name}! Your account has been created successfully. Your Counselor, Teacher, and HOD have been automatically linked to your profile.`,
         reason: "Registration Success"
       });
-    } catch (e) {}
+
+      // 2. Notify Assigned Counselor
+      if (cId) {
+        const counData = await pool.query("SELECT email, name FROM users WHERE id=$1", [cId]);
+        if (counData.rows[0]?.email) {
+          await sendFacultyNotificationEmail(counData.rows[0].email, `[SPMS] New Student Joined: ${name}`, {
+            studentName: name, rollNo: cleanRollNo || 'N/A', category: "New Mentee Registration",
+            actionMsg: `Hello ${counData.rows[0].name}, a new student has registered and has been automatically assigned to your counseling group.`,
+            reason: "Automatic Mentor Linking"
+          });
+        }
+      }
+    } catch (e) {
+       console.error("[Email Notification Error during registration]:", e.message);
+    }
 
     res.json({ success: true });
   } catch (err) {
