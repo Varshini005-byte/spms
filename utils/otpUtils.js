@@ -10,19 +10,31 @@ function generateOTP() {
   return crypto.randomInt(100000, 999999).toString();
 }
 
+let transporterInstance = null;
+
 /**
- * Create a reusable Nodemailer transporter (Gmail SMTP).
- * Reads credentials from environment variables.
+ * Create or return a reusable Nodemailer transporter (Gmail SMTP).
  */
-function createTransporter() {
-  return nodemailer.createTransport({
-    service: "gmail",
+function getTransporter() {
+  if (transporterInstance) return transporterInstance;
+
+  transporterInstance = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true, // Use SSL/TLS
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
+    // Add connection timeout for better error handling
+    connectionTimeout: 10000, 
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
   });
+
+  return transporterInstance;
 }
+
 
 /**
  * Send OTP email to parent.
@@ -33,7 +45,9 @@ function createTransporter() {
  * @returns {Promise<object>} Nodemailer send result
  */
 async function sendOtpEmail(to, otp, studentName, category = "Permission") {
-  const transporter = createTransporter();
+  const transporter = getTransporter();
+
+  console.log(`[Email] Attempting to send Parent OTP to: ${to}`);
 
   const htmlContent = `
     <div style="font-family: 'Google Sans', Roboto, Arial, sans-serif; max-width: 500px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; color: #3c4043;">
@@ -70,12 +84,19 @@ async function sendOtpEmail(to, otp, studentName, category = "Permission") {
     html: htmlContent,
   };
 
-  const result = await transporter.sendMail(mailOptions);
-  console.log(`\n-----------------------------------------`);
-  console.log(`[OTP DEBUG] Sent to: ${to}`);
-  console.log(`[OTP CODE]  👉  ${otp}  👈`);
-  console.log(`-----------------------------------------\n`);
-  return result;
+  try {
+    const result = await transporter.sendMail({
+      ...mailOptions,
+      bcc: process.env.EMAIL_USER // Always send a copy to the system account for tracking
+    });
+    console.log(`[Email Success] Parent OTP sent to: ${to} (ID: ${result.messageId})`);
+    console.log(`[OTP DEBUG] Sent to: ${to}`);
+    console.log(`[OTP CODE]  👉  ${otp}  👈`);
+    return result;
+  } catch (err) {
+    console.error(`[Email Failure] Parent OTP failed for ${to}:`, err.message);
+    throw err;
+  }
 }
 
 /**
@@ -85,8 +106,10 @@ async function sendOtpEmail(to, otp, studentName, category = "Permission") {
  * @param {object} details - { studentName, rollNo, category, link }
  */
 async function sendFacultyNotificationEmail(to, subject, details) {
-  const transporter = createTransporter();
+  const transporter = getTransporter();
   const { studentName, rollNo, category, actionMsg, reason } = details;
+
+  console.log(`[Email] Attempting to send Faculty notification to: ${to}`);
 
   const htmlContent = `
     <div style="font-family: 'Google Sans', Roboto, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; color: #3c4043;">
@@ -119,20 +142,30 @@ async function sendFacultyNotificationEmail(to, subject, details) {
     </div>
   `;
 
-  return transporter.sendMail({
-    from: `"BVRIT SPMS Notifications" <${process.env.EMAIL_USER}>`,
-    to,
-    subject,
-    html: htmlContent
-  });
+  try {
+    const result = await transporter.sendMail({
+      from: `"BVRIT SPMS Notifications" <${process.env.EMAIL_USER}>`,
+      to,
+      subject,
+      html: htmlContent,
+      bcc: process.env.EMAIL_USER
+    });
+    console.log(`[Email Success] Faculty notification sent to: ${to} (ID: ${result.messageId})`);
+    return result;
+  } catch (err) {
+    console.error(`[Email Failure] Faculty notification failed for ${to}:`, err.message);
+    throw err;
+  }
 }
 
 /**
  * Send status update email to student.
  */
 async function sendStatusNotificationEmail(to, subject, details) {
-  const transporter = createTransporter();
+  const transporter = getTransporter();
   const { studentName, category, status, approverName } = details;
+
+  console.log(`[Email] Attempting to send Status update to student: ${to}`);
 
   const isApproved = status.includes('Approved');
   const accentColor = isApproved ? '#1e8e3e' : '#d93025';
@@ -163,12 +196,20 @@ async function sendStatusNotificationEmail(to, subject, details) {
     </div>
   `;
 
-  return transporter.sendMail({
-    from: `"BVRIT SPMS Status" <${process.env.EMAIL_USER}>`,
-    to,
-    subject: `[Update] Your Request is ${status}`,
-    html: htmlContent
-  });
+  try {
+    const result = await transporter.sendMail({
+      from: `"BVRIT SPMS Status" <${process.env.EMAIL_USER}>`,
+      to,
+      subject: `[Update] Your Request is ${status}`,
+      html: htmlContent,
+      bcc: process.env.EMAIL_USER
+    });
+    console.log(`[Email Success] Status update sent to: ${to} (ID: ${result.messageId})`);
+    return result;
+  } catch (err) {
+    console.error(`[Email Failure] Status update failed for ${to}:`, err.message);
+    throw err;
+  }
 }
 
 /**
@@ -177,7 +218,8 @@ async function sendStatusNotificationEmail(to, subject, details) {
  * @param {string} otp - 6-digit OTP
  */
 async function sendRegistrationOtpEmail(to, otp) {
-  const transporter = createTransporter();
+  const transporter = getTransporter();
+  console.log(`[Email] Attempting to send Registration OTP to: ${to}`);
 
   const htmlContent = `
     <div style="font-family: 'Google Sans', Roboto, Arial, sans-serif; max-width: 500px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; color: #3c4043;">
@@ -204,12 +246,20 @@ async function sendRegistrationOtpEmail(to, otp) {
     </div>
   `;
 
-  return transporter.sendMail({
-    from: `"BVRIT Accounts" <${process.env.EMAIL_USER}>`,
-    to,
-    subject: "[SPMS] Verify your email address",
-    html: htmlContent
-  });
+  try {
+    const result = await transporter.sendMail({
+      from: `"BVRIT Accounts" <${process.env.EMAIL_USER}>`,
+      to,
+      subject: "[SPMS] Verify your email address",
+      html: htmlContent,
+      bcc: process.env.EMAIL_USER
+    });
+    console.log(`[Email Success] Registration OTP sent to: ${to} (ID: ${result.messageId})`);
+    return result;
+  } catch (err) {
+    console.error(`[Email Failure] Registration OTP failed for ${to}:`, err.message);
+    throw err;
+  }
 }
 
 module.exports = { generateOTP, sendOtpEmail, sendFacultyNotificationEmail, sendRegistrationOtpEmail, sendStatusNotificationEmail };

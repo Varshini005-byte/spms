@@ -502,10 +502,10 @@ app.put("/permissions/:id", async (req, res) => {
                 [si.counselor_id, permId, msg]
               );
             }
-            if (si.teacher_id) {
+            if (si.class_teacher_id) {
               await pool.query(
                 `INSERT INTO faculty_notifications (faculty_id, permission_id, message) VALUES ($1, $2, $3)`,
-                [si.teacher_id, permId, msg]
+                [si.class_teacher_id, permId, msg]
               );
             }
           } catch (notifErr) {
