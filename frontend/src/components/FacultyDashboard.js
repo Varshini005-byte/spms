@@ -37,12 +37,12 @@ export default function FacultyDashboard() {
     const url =
       viewMode === "history"
         ? `${API_BASE}/permissions?role=faculty&view=history&id=${user.id}`
-        : `${API_BASE}/permissions?role=faculty&sub_role=${subRole}&id=${user.id}`;
+        : `${API_BASE}/permissions?role=faculty&id=${user.id}`;
     fetch(url)
       .then(r => r.json())
       .then(d => { if (d.success) setRequests(d.data); })
       .catch(console.error);
-  }, [viewMode, subRole]);
+  }, [viewMode, user.id]);
 
   const fetchNotifications = useCallback(() => {
     if (!user.id) return;
@@ -62,14 +62,14 @@ export default function FacultyDashboard() {
   }, [fetchNotifications]);
 
   // ---------- actions ----------
-  const handleAction = async (id, action) => {
+  const handleAction = async (id, action, roleCapacity) => {
     try {
       const res = await fetch(`${API_BASE}/permissions/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           role: "faculty",
-          sub_role: subRole,
+          sub_role: roleCapacity,
           action,
           name: user.name,
         }),
@@ -241,16 +241,30 @@ export default function FacultyDashboard() {
         </a>
       )}
 
+      <div style={{ marginTop: 6, marginBottom: 10 }}>
+        <span style={{ 
+          fontSize: "0.75rem", 
+          background: "rgba(99, 102, 241, 0.1)", 
+          color: "#6366f1", 
+          padding: "3px 10px", 
+          borderRadius: 20, 
+          fontWeight: 600,
+          border: "1px solid rgba(99, 102, 241, 0.2)"
+        }}>
+          Action Capacity: {req.my_active_role === 'counselor' ? 'Counselor' : req.my_active_role === 'class_teacher' ? 'Class Teacher' : 'HOD'}
+        </span>
+      </div>
+
       {showActions && viewMode === "pending" ? (
         <div style={{ marginTop: 12, display: "flex", gap: 10 }}>
           {/* HOD sees emergency bypass button for urgent leaves not yet through normal queue */}
-          {subRole === "hod" && req.priority === "Urgent" && req.status_class_teacher !== "Approved" && (
+          {req.my_active_role === "hod" && req.priority === "Urgent" && req.status_class_teacher !== "Approved" && (
             <button
               className="submit-btn"
               style={{ flex: 1, padding: 11, fontSize: "0.8rem", background: "#8b5cf6" }}
               onClick={() => {
                 if (window.confirm("⚡ Directly approve this EMERGENCY leave, bypassing counselor & class teacher? They will be notified.")) {
-                  handleAction(req.id, "Approved");
+                  handleAction(req.id, "Approved", req.my_active_role);
                 }
               }}
             >
@@ -258,19 +272,19 @@ export default function FacultyDashboard() {
             </button>
           )}
           {/* Normal approve/reject (for non-emergency or when queue is ready) */}
-          {!(subRole === "hod" && req.priority === "Urgent" && req.status_class_teacher !== "Approved") && (
+          {!(req.my_active_role === "hod" && req.priority === "Urgent" && req.status_class_teacher !== "Approved") && (
             <>
               <button
                 className="submit-btn"
                 style={{ flex: 1, padding: 11, fontSize: "0.85rem" }}
-                onClick={() => handleAction(req.id, "Approved")}
+                onClick={() => handleAction(req.id, "Approved", req.my_active_role)}
               >
                 Approve
               </button>
               <button
                 className="submit-btn"
                 style={{ flex: 1, padding: 11, fontSize: "0.85rem", background: "#ef4444" }}
-                onClick={() => handleAction(req.id, "Rejected")}
+                onClick={() => handleAction(req.id, "Rejected", req.my_active_role)}
               >
                 Reject
               </button>

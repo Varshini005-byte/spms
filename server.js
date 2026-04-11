@@ -337,33 +337,42 @@ app.get("/permissions", async (req, res) => {
        queryStr += ` WHERE p.student_id = $1 ORDER BY p.created_at DESC`;
        values = [id];
     } else if (role === 'faculty') {
-       const subRole = req.query.sub_role;
-       // Strict filtering based on the student's mapped faculty
        if (view === 'history') {
-         queryStr += ` WHERE p.student_id IN (SELECT id FROM users WHERE counselor_id=$1 OR class_teacher_id=$1 OR hod_id=$1) AND (p.status_counselor != 'Pending' OR p.status_class_teacher != 'Pending' OR p.status_hod != 'Pending')`;
+         queryStr = `
+           SELECT p.*, u.name, u.attendance, u.residence_type,
+                  CASE 
+                    WHEN u.counselor_id = $1 THEN 'counselor'
+                    WHEN u.class_teacher_id = $1 THEN 'class_teacher'
+                    WHEN u.hod_id = $1 THEN 'hod'
+                  END as my_active_role
+           FROM permissions p
+           JOIN users u ON p.student_id = u.id
+           WHERE (u.counselor_id = $1 OR u.class_teacher_id = $1 OR u.hod_id = $1)
+             AND (p.status_counselor != 'Pending' OR p.status_class_teacher != 'Pending' OR p.status_hod != 'Pending')
+           ORDER BY p.created_at DESC
+         `;
          values = [id];
        } else {
-         if (subRole === 'counselor') {
-            queryStr += ` WHERE p.status_counselor = 'Pending' AND p.student_id IN (SELECT id FROM users WHERE counselor_id=$1)`;
-            values = [id];
-         } else if (subRole === 'class_teacher') {
-            // Show if it's Teacher's turn OR (30 mins passed OR Urgent)
-            queryStr += ` WHERE p.status_class_teacher = 'Pending' 
-                         AND (p.status_counselor = 'Approved' OR p.priority = 'Urgent' OR p.created_at < NOW() - INTERVAL '30 minutes') 
-                         AND p.student_id IN (SELECT id FROM users WHERE class_teacher_id=$1)`;
-            values = [id];
-         } else if (subRole === 'hod') {
-            // Show if it's HOD's turn OR (60 mins passed OR (Coun Approved + 30m) OR Urgent)
-            queryStr += ` WHERE p.status_hod = 'Pending' 
-                         AND (p.status_class_teacher = 'Approved' 
-                              OR p.priority = 'Urgent' 
-                              OR p.created_at < NOW() - INTERVAL '60 minutes'
-                              OR (p.status_counselor = 'Approved' AND p.c_approved_at < NOW() - INTERVAL '30 minutes'))
-                         AND p.student_id IN (SELECT id FROM users WHERE hod_id=$1)`;
-            values = [id];
-         }
+         queryStr = `
+           SELECT p.*, u.name, u.attendance, u.residence_type,
+                  CASE 
+                    WHEN u.counselor_id = $1 THEN 'counselor'
+                    WHEN u.class_teacher_id = $1 THEN 'class_teacher'
+                    WHEN u.hod_id = $1 THEN 'hod'
+                  END as my_active_role
+           FROM permissions p
+           JOIN users u ON p.student_id = u.id
+           WHERE (
+             (u.counselor_id = $1 AND p.status_counselor = 'Pending')
+             OR
+             (u.class_teacher_id = $1 AND p.status_class_teacher = 'Pending' AND (p.status_counselor = 'Approved' OR p.priority = 'Urgent' OR p.created_at < NOW() - INTERVAL '30 minutes'))
+             OR
+             (u.hod_id = $1 AND p.status_hod = 'Pending' AND (p.status_class_teacher = 'Approved' OR p.priority = 'Urgent' OR p.created_at < NOW() - INTERVAL '60 minutes' OR (p.status_counselor = 'Approved' AND p.c_approved_at < NOW() - INTERVAL '30 minutes')))
+           )
+           ORDER BY p.priority DESC, p.created_at DESC
+         `;
+         values = [id];
        }
-       queryStr += ` ORDER BY p.priority DESC, p.created_at DESC`;
     } else if (role === 'warden') {
        if (view === 'history') {
          queryStr += ` WHERE p.status_warden != 'Pending'`;
