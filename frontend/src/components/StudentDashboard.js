@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Home, Stethoscope, GraduationCap, Rocket, MapPin, ClipboardList, Clock, CheckCircle, XCircle, QrCode, ArrowLeft, Sun, Moon, AlertTriangle } from "lucide-react";
+import { Home, Stethoscope, GraduationCap, Rocket, MapPin, ClipboardList, Clock, CheckCircle, XCircle, QrCode, ArrowLeft, Sun, Moon, AlertTriangle, Trash2 } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import { useTheme } from "../App";
 import "./StudentDashboard.css";
@@ -38,6 +38,22 @@ export default function StudentDashboard() {
     { name: "Emergency Leave", icon: <AlertTriangle size={20} color="#ef4444" /> },
     { name: "My Passes", icon: <QrCode size={20} /> }
   ];
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this request? This action cannot be undone.")) return;
+    try {
+      const res = await fetch(`${API_BASE}/permissions/${id}?student_id=${user.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        setNotification({ message: "Request deleted successfully 🗑️", type: "success" });
+        fetchHistory();
+      } else {
+        setNotification({ message: data.message || "Delete failed ❌", type: "error" });
+      }
+    } catch {
+      setNotification({ message: "Network error ⚠️", type: "error" });
+    }
+  };
 
   const handleEscalate = async (id) => {
     if (!window.confirm("Are you sure you want to escalate this to an Emergency? The HOD will be notified directly.")) return;
@@ -142,9 +158,18 @@ export default function StudentDashboard() {
 
   const renderRequestItem = (req) => (
     <>
-      <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: 12}}>
-         <span style={{fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)'}}>{req.category}</span>
-         <span style={{fontSize: '0.75rem', color: 'var(--text-muted)'}}>{new Date(req.created_at).toLocaleDateString()}</span>
+      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12}}>
+         <div>
+            <span style={{fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)', display: 'block'}}>{req.category}</span>
+            <span style={{fontSize: '0.75rem', color: 'var(--text-muted)'}}>{new Date(req.created_at).toLocaleDateString()}</span>
+         </div>
+         <button 
+           onClick={() => handleDelete(req.id)} 
+           style={{background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '5px', borderRadius: '50%'}}
+           title="Delete Request"
+         >
+           <Trash2 size={16} />
+         </button>
       </div>
       
       <div className="status-stepper" style={{display: 'flex', justifyContent: 'space-between', marginTop: 5, position: 'relative'}}>

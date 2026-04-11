@@ -674,6 +674,25 @@ app.get("/permissions/student-lookup", async (req, res) => {
   }
 });
 
+// ================= DELETE REQUEST =================
+app.delete("/permissions/:id", async (req, res) => {
+  const permId = req.params.id;
+  const { student_id } = req.query; // Send via query for simplicity in DELETE
+  try {
+    const result = await pool.query(
+      "DELETE FROM permissions WHERE id=$1 AND student_id=$2 RETURNING *",
+      [permId, student_id]
+    );
+    if (result.rows.length === 0) {
+      return res.json({ success: false, message: "Request not found or unauthorized" });
+    }
+    res.json({ success: true, message: "Request deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false });
+  }
+});
+
 // ================= OTP VERIFICATION =================
 app.post("/parent/resend-otp", async (req, res) => {
   const { student_id, permission_id } = req.body;
