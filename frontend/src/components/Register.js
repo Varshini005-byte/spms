@@ -97,15 +97,15 @@ export default function Register() {
                 style={{ padding: "12px", borderRadius: "8px", border: "1px solid #e2e8f0", outline: "none", backgroundColor: "var(--bg-input)", color: "var(--text-main)", marginBottom: "15px", width: "100%" }}
                 value={form.role}
                 onChange={(e) => {
-                    const newRole = e.target.value;
-                    setForm({ 
-                        ...form, 
-                        role: newRole,
-                        roll_no: "",
-                        faculty_id: "",
-                        parent_of_roll_no: "",
-                        residence_type: newRole === 'student' ? 'day_scholar' : form.residence_type
-                    });
+                  const newRole = e.target.value;
+                  setForm({
+                    ...form,
+                    role: newRole,
+                    roll_no: "",
+                    faculty_id: "",
+                    parent_of_roll_no: "",
+                    residence_type: newRole === 'student' ? 'day_scholar' : form.residence_type
+                  });
                 }}
               >
                 <option value="student">Student</option>

@@ -36,53 +36,29 @@ async function sendOtpEmail(to, otp, studentName, category = "Permission") {
   const transporter = createTransporter();
 
   const htmlContent = `
-    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
-      <!-- Header -->
-      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 32px 24px; text-align: center;">
-        <h1 style="color: #fff; margin: 0; font-size: 22px; font-weight: 600;">
-          🔐 SPMS — Parent Verification
-        </h1>
+    <div style="font-family: 'Google Sans', Roboto, Arial, sans-serif; max-width: 500px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; color: #3c4043;">
+      <div style="padding: 32px 24px; border-bottom: 1px solid #f1f3f4; text-align: center;">
+        <span style="font-size: 24px; color: #1a73e8; font-weight: 500;">BVRIT SPMS</span>
       </div>
-
-      <!-- Body -->
-      <div style="padding: 32px 24px;">
-        <p style="color: #333; font-size: 15px; line-height: 1.6; margin: 0 0 16px;">
-          Dear Parent,
+      <div style="padding: 32px 24px; text-align: center;">
+        <h2 style="font-size: 22px; color: #202124; margin-top: 0; font-weight: 500;">Parent Approval Required</h2>
+        <p style="font-size: 14px; line-height: 1.5; color: #5f6368;">
+          Your ward, <strong>${studentName}</strong>, has submitted a <strong>${category}</strong> request.
         </p>
-        <p style="color: #333; font-size: 15px; line-height: 1.6; margin: 0 0 16px;">
-          Your ward <strong>${studentName}</strong> has submitted a 
-          <strong>${category}</strong> request that requires your approval.
+        <p style="font-size: 14px; line-height: 1.5; color: #5f6368; margin-bottom: 32px;">
+          Use the following approval code to authorize this request:
         </p>
-        <p style="color: #333; font-size: 15px; line-height: 1.6; margin: 0 0 24px;">
-          Please use the following OTP to approve the request:
-        </p>
-
-        <!-- OTP Box -->
-        <div style="text-align: center; margin: 0 0 24px;">
-          <div style="display: inline-block; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); padding: 16px 40px; border-radius: 12px; border: 2px dashed #667eea;">
-            <span style="font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #333;">
-              ${otp}
-            </span>
-          </div>
+        <div style="margin: 32px 0;">
+          <span style="font-size: 32px; font-weight: 500; letter-spacing: 6px; color: #202124; background-color: #f8f9fa; padding: 16px 32px; border-radius: 4px; border: 1px solid #dadce0;">
+            ${otp}
+          </span>
         </div>
-
-        <p style="color: #e74c3c; font-size: 13px; text-align: center; margin: 0 0 16px; font-weight: 600;">
-          ⏱ This OTP expires in 5 minutes
-        </p>
-
-        <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
-
-        <p style="color: #888; font-size: 12px; line-height: 1.5; margin: 0;">
-          If you did not expect this request, please ignore this email or contact the institution.<br/>
-          Do not share this OTP with anyone.
+        <p style="font-size: 12px; color: #d93025; font-weight: 500; margin-top: 32px;">
+          This code expires in 5 minutes.
         </p>
       </div>
-
-      <!-- Footer -->
-      <div style="background: #f8f9fa; padding: 16px 24px; text-align: center;">
-        <p style="color: #aaa; font-size: 11px; margin: 0;">
-          Smart Permission Management System (SPMS) &copy; ${new Date().getFullYear()}
-        </p>
+      <div style="padding: 16px; background-color: #f8f9fa; text-align: center; font-size: 11px; color: #9aa0a6;">
+        Smart Permission Management System &copy; ${new Date().getFullYear()}
       </div>
     </div>
   `;
@@ -113,33 +89,84 @@ async function sendFacultyNotificationEmail(to, subject, details) {
   const { studentName, rollNo, category, actionMsg, reason } = details;
 
   const htmlContent = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
-      <div style="background: #4f46e5; color: white; padding: 24px; text-align: center;">
-        <h2 style="margin: 0;">SPMS Active Notification</h2>
+    <div style="font-family: 'Google Sans', Roboto, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; color: #3c4043;">
+      <div style="padding: 32px 24px; border-bottom: 1px solid #f1f3f4;">
+        <span style="font-size: 24px; color: #1a73e8; font-weight: 500;">BVRIT SPMS</span>
       </div>
-      <div style="padding: 24px; color: #1e293b;">
-        <p>Hello,</p>
-        <p><strong>${actionMsg}</strong></p>
-        <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin: 20px 0;">
-          <p style="margin: 0 0 8px 0;"><strong>Student:</strong> ${studentName} (${rollNo})</p>
-          <p style="margin: 0 0 8px 0;"><strong>Category:</strong> ${category}</p>
-          ${reason ? `<p style="margin: 0;"><strong>Reason:</strong> ${reason}</p>` : ''}
+      <div style="padding: 32px 24px;">
+        <h2 style="font-size: 20px; color: #202124; margin-top: 0; font-weight: 500;">Action Required: Permission Request</h2>
+        <p style="font-size: 14px; line-height: 1.5; color: #5f6368;">
+          Hello,
+        </p>
+        <p style="font-size: 16px; line-height: 1.5; color: #202124; margin-bottom: 24px;">
+          ${actionMsg}
+        </p>
+        <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+          <table style="width: 100%; font-size: 14px; color: #3c4043; border-collapse: collapse;">
+            <tr><td style="padding-bottom: 8px; font-weight: 500;">Student:</td><td style="padding-bottom: 8px;">${studentName} (${rollNo})</td></tr>
+            <tr><td style="padding-bottom: 8px; font-weight: 500;">Category:</td><td style="padding-bottom: 8px;">${category}</td></tr>
+            ${reason ? `<tr><td style="font-weight: 500;">Reason:</td><td>${reason}</td></tr>` : ''}
+          </table>
         </div>
-        <p>Please log in to the BVRIT SPMS portal to take action.</p>
-        <div style="text-align: center; margin-top: 30px;">
-          <a href="https://spms-frontendf.onrender.com" style="background: #4f46e5; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">Login to Portal</a>
+        <div style="text-align: center; margin-top: 32px;">
+          <a href="https://spms-frontendf.onrender.com" style="background-color: #1a73e8; color: #ffffff; padding: 12px 24px; border-radius: 4px; text-decoration: none; font-size: 14px; font-weight: 500; display: inline-block;">View in Portal</a>
         </div>
       </div>
-      <div style="background: #f1f5f9; padding: 16px; text-align: center; color: #64748b; font-size: 12px;">
-        Smart Permission Management System
+      <div style="padding: 24px; background-color: #f8f9fa; text-align: center; font-size: 12px; color: #70757a;">
+        <p style="margin: 0;">Smart Permission Management System (SPMS) &copy; ${new Date().getFullYear()}</p>
+        <p style="margin: 4px 0 0;">This is an automated notification. Please do not reply to this email.</p>
       </div>
     </div>
   `;
 
   return transporter.sendMail({
-    from: `"SPMS Notifications" <${process.env.EMAIL_USER}>`,
+    from: `"BVRIT SPMS Notifications" <${process.env.EMAIL_USER}>`,
     to,
     subject,
+    html: htmlContent
+  });
+}
+
+/**
+ * Send status update email to student.
+ */
+async function sendStatusNotificationEmail(to, subject, details) {
+  const transporter = createTransporter();
+  const { studentName, category, status, approverName } = details;
+
+  const isApproved = status.includes('Approved');
+  const accentColor = isApproved ? '#1e8e3e' : '#d93025';
+
+  const htmlContent = `
+    <div style="font-family: 'Google Sans', Roboto, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; color: #3c4043;">
+      <div style="padding: 32px 24px; border-bottom: 1px solid #f1f3f4;">
+        <span style="font-size: 24px; color: #1a73e8; font-weight: 500;">BVRIT SPMS</span>
+      </div>
+      <div style="padding: 32px 24px;">
+        <h2 style="font-size: 20px; color: #202124; margin-top: 0; font-weight: 500;">Request Update</h2>
+        <p style="font-size: 14px; line-height: 1.5; color: #5f6368;">
+          Hello ${studentName},
+        </p>
+        <p style="font-size: 16px; line-height: 1.5; color: #202124;">
+          Your <strong>${category}</strong> request has been <span style="color: ${accentColor}; font-weight: bold;">${status}</span>.
+        </p>
+        <p style="font-size: 14px; color: #5f6368; margin-bottom: 24px;">
+          Action taken by: <strong>${approverName}</strong>
+        </p>
+        <div style="text-align: center; margin-top: 32px;">
+          <a href="https://spms-frontendf.onrender.com" style="background-color: #1a73e8; color: #ffffff; padding: 12px 24px; border-radius: 4px; text-decoration: none; font-size: 14px; font-weight: 500; display: inline-block;">Open Dashboard</a>
+        </div>
+      </div>
+      <div style="padding: 24px; background-color: #f8f9fa; text-align: center; font-size: 12px; color: #70757a;">
+        <p style="margin: 0;">Smart Permission Management System (SPMS) &copy; ${new Date().getFullYear()}</p>
+      </div>
+    </div>
+  `;
+
+  return transporter.sendMail({
+    from: `"BVRIT SPMS Status" <${process.env.EMAIL_USER}>`,
+    to,
+    subject: `[Update] Your Request is ${status}`,
     html: htmlContent
   });
 }
@@ -150,34 +177,39 @@ async function sendFacultyNotificationEmail(to, subject, details) {
  * @param {string} otp - 6-digit OTP
  */
 async function sendRegistrationOtpEmail(to, otp) {
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+  const transporter = createTransporter();
 
   const htmlContent = `
-    <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px; padding: 20px;">
-      <h2 style="color: #4f46e5; text-align: center;">Account Verification</h2>
-      <p>Thank you for registering on <strong>BVRIT SPMS</strong>.</p>
-      <p>Use the following OTP to verify your email address and complete your registration:</p>
-      <div style="text-align: center; margin: 30px 0;">
-        <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; background: #f3f4f6; padding: 10px 20px; border-radius: 8px; color: #1f2937;">
-          ${otp}
-        </span>
+    <div style="font-family: 'Google Sans', Roboto, Arial, sans-serif; max-width: 500px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; color: #3c4043;">
+      <div style="padding: 32px 24px; border-bottom: 1px solid #f1f3f4; text-align: center;">
+        <span style="font-size: 24px; color: #1a73e8; font-weight: 500;">BVRIT SPMS</span>
       </div>
-      <p style="color: #6b7280; font-size: 14px;">This OTP will expire in 10 minutes. If you did not request this, please ignore this email.</p>
+      <div style="padding: 32px 24px; text-align: center;">
+        <h2 style="font-size: 22px; color: #202124; margin-top: 0; font-weight: 500;">Verify your email</h2>
+        <p style="font-size: 14px; line-height: 1.5; color: #5f6368; margin-bottom: 32px;">
+          Use the following verification code to complete your registration for the Smart Permission Management System.
+        </p>
+        <div style="margin: 32px 0;">
+          <span style="font-size: 32px; font-weight: 500; letter-spacing: 6px; color: #202124; background-color: #f8f9fa; padding: 16px 32px; border-radius: 4px; border: 1px solid #dadce0;">
+            ${otp}
+          </span>
+        </div>
+        <p style="font-size: 12px; color: #70757a; margin-top: 32px;">
+          This code will expire in 10 minutes. If you didn't request this, you can safely ignore this email.
+        </p>
+      </div>
+      <div style="padding: 16px; background-color: #f8f9fa; text-align: center; font-size: 11px; color: #9aa0a6;">
+        Smart Permission Management System &copy; ${new Date().getFullYear()}
+      </div>
     </div>
   `;
 
   return transporter.sendMail({
-    from: `"SPMS Accounts" <${process.env.EMAIL_USER}>`,
+    from: `"BVRIT Accounts" <${process.env.EMAIL_USER}>`,
     to,
-    subject: "[BVRIT SPMS] Verify your email address",
+    subject: "[SPMS] Verify your email address",
     html: htmlContent
   });
 }
 
-module.exports = { generateOTP, sendOtpEmail, sendFacultyNotificationEmail, sendRegistrationOtpEmail };
+module.exports = { generateOTP, sendOtpEmail, sendFacultyNotificationEmail, sendRegistrationOtpEmail, sendStatusNotificationEmail };

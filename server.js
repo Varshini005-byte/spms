@@ -14,8 +14,8 @@ app.use(express.json());
 
 // File upload setup
 const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadDir)){
-    fs.mkdirSync(uploadDir);
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
 }
 const storage = multer.diskStorage({
   destination: function (req, file, cb) { cb(null, 'uploads/') },
@@ -41,19 +41,19 @@ app.post("/register/send-otp", async (req, res) => {
   if (!email) return res.status(400).json({ success: false, message: "Email is required" });
 
   const { generateOTP, sendRegistrationOtpEmail } = require("./utils/otpUtils");
-  
+
   try {
-     const otp = generateOTP();
-     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
-     
-     await pool.query("DELETE FROM registration_otps WHERE email = $1", [email]);
-     await pool.query("INSERT INTO registration_otps (email, otp, expires_at) VALUES ($1, $2, $3)", [email, otp, expiresAt]);
-     
-     await sendRegistrationOtpEmail(email, otp);
-     res.json({ success: true, message: "Verification code sent to your email! 📩" });
+    const otp = generateOTP();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+
+    await pool.query("DELETE FROM registration_otps WHERE email = $1", [email]);
+    await pool.query("INSERT INTO registration_otps (email, otp, expires_at) VALUES ($1, $2, $3)", [email, otp, expiresAt]);
+
+    await sendRegistrationOtpEmail(email, otp);
+    res.json({ success: true, message: "Verification code sent to your email! 📩" });
   } catch (err) {
-     console.error("Reg OTP Error:", err);
-     res.status(500).json({ success: false, message: "Failed to send verification code" });
+    console.error("Reg OTP Error:", err);
+    res.status(500).json({ success: false, message: "Failed to send verification code" });
   }
 });
 
@@ -75,17 +75,17 @@ app.post("/register", async (req, res) => {
     const cleanRollNo = (role === 'student') ? roll_no : null;
     const cleanFacultyId = (role === 'faculty') ? faculty_id : null;
     const cleanPhoneNo = phone_no || null;
-    
+
     // AUTOMATIC MENTOR LINKING for Students
     let cId = null, tId = null, hId = null;
     if (role === 'student') {
-       const coun = await pool.query("SELECT id FROM users WHERE sub_role='counselor' LIMIT 1");
-       const tea = await pool.query("SELECT id FROM users WHERE sub_role='class_teacher' LIMIT 1");
-       const hod = await pool.query("SELECT id FROM users WHERE sub_role='hod' LIMIT 1");
-       
-       cId = coun.rows[0]?.id || null;
-       tId = tea.rows[0]?.id || null;
-       hId = hod.rows[0]?.id || null;
+      const coun = await pool.query("SELECT id FROM users WHERE sub_role='counselor' LIMIT 1");
+      const tea = await pool.query("SELECT id FROM users WHERE sub_role='class_teacher' LIMIT 1");
+      const hod = await pool.query("SELECT id FROM users WHERE sub_role='hod' LIMIT 1");
+
+      cId = coun.rows[0]?.id || null;
+      tId = tea.rows[0]?.id || null;
+      hId = hod.rows[0]?.id || null;
     }
 
     await pool.query(
@@ -96,7 +96,7 @@ app.post("/register", async (req, res) => {
 
     try {
       const { sendFacultyNotificationEmail } = require("./utils/otpUtils");
-      
+
       // 1. Notify Student
       await sendFacultyNotificationEmail(email, "[SPMS] Welcome to BVRIT SPMS!", {
         studentName: name, rollNo: cleanRollNo || cleanFacultyId || 'N/A', category: "Account Registration",
@@ -116,7 +116,7 @@ app.post("/register", async (req, res) => {
         }
       }
     } catch (e) {
-       console.error("[Email Notification Error during registration]:", e.message);
+      console.error("[Email Notification Error during registration]:", e.message);
     }
 
     res.json({ success: true });
@@ -158,7 +158,7 @@ app.get("/faculty-list", async (req, res) => {
       "SELECT id, name, sub_role FROM users WHERE role='faculty' ORDER BY name ASC"
     );
     res.json({ success: true, data: list.rows });
-  } catch(err) {
+  } catch (err) {
     console.error(err);
     res.status(500).json({ success: false });
   }
@@ -181,13 +181,13 @@ async function triggerNextEmail(permId) {
       LEFT JOIN users h ON u.hod_id = h.id
       WHERE p.id = $1
     `, [permId]);
-    
+
     if (res.rows.length === 0) return;
     const p = res.rows[0];
-    
+
     let targetEmail = null;
     let actionMsg = "";
-    
+
     // Logic for next person in line
     if (p.status_counselor === 'Approved' && p.status_class_teacher === 'Pending') {
       targetEmail = p.t_email;
@@ -199,22 +199,22 @@ async function triggerNextEmail(permId) {
       targetEmail = p.w_email;
       actionMsg = "The HOD has approved this request. As the student is a hosteler, it is now awaiting your Warden approval.";
     } else if (p.hod_bypass) {
-       // Send emails to bypassed counselor/teacher
-       if (p.c_email) {
-         await sendFacultyNotificationEmail(p.c_email, `[SPMS] Emergency Bypass: ${p.s_name}`, {
-           studentName: p.s_name, rollNo: p.roll_no, category: p.category, reason: p.reason,
-           actionMsg: "🚨 HOD Emergency Bypass: The HOD has directly approved this URGENT request. Your approval was bypassed for emergency."
-         });
-       }
-       if (p.t_email) {
-         await sendFacultyNotificationEmail(p.t_email, `[SPMS] Emergency Bypass: ${p.s_name}`, {
-           studentName: p.s_name, rollNo: p.roll_no, category: p.category, reason: p.reason,
-           actionMsg: "🚨 HOD Emergency Bypass: The HOD has directly approved this URGENT request. Your approval was bypassed for emergency."
-         });
-       }
-       return;
+      // Send emails to bypassed counselor/teacher
+      if (p.c_email) {
+        await sendFacultyNotificationEmail(p.c_email, `[SPMS] Emergency Bypass: ${p.s_name}`, {
+          studentName: p.s_name, rollNo: p.roll_no, category: p.category, reason: p.reason,
+          actionMsg: "🚨 HOD Emergency Bypass: The HOD has directly approved this URGENT request. Your approval was bypassed for emergency."
+        });
+      }
+      if (p.t_email) {
+        await sendFacultyNotificationEmail(p.t_email, `[SPMS] Emergency Bypass: ${p.s_name}`, {
+          studentName: p.s_name, rollNo: p.roll_no, category: p.category, reason: p.reason,
+          actionMsg: "🚨 HOD Emergency Bypass: The HOD has directly approved this URGENT request. Your approval was bypassed for emergency."
+        });
+      }
+      return;
     }
-    
+
     if (targetEmail) {
       await sendFacultyNotificationEmail(targetEmail, `[SPMS] Action Required: ${p.s_name}`, {
         studentName: p.s_name,
@@ -246,7 +246,7 @@ app.post("/permissions/request", upload.single("attachment"), async (req, res) =
        LEFT JOIN users h ON u.hod_id = h.id
        WHERE u.id=$1`, [student_id]);
     if (userRes.rows.length === 0) return res.json({ success: false, message: "User not found" });
-    
+
     const studentData = userRes.rows[0];
     const isHosteler = studentData.residence_type === "hosteler";
 
@@ -274,16 +274,16 @@ app.post("/permissions/request", upload.single("attachment"), async (req, res) =
       statusCoun = "Approved"; statusTea = "Approved"; statusHod = "Approved";
       statusWar = "N/A"; statusPar = "N/A";
     } else {
-       // Standard Sequential Flow
-       statusCoun = "Pending";
-       statusTea = "Pending";
-       statusHod = "Pending";
-       if (isHosteler) statusWar = "Pending";
-       if (category === "Campus Events" || category === "Off-Campus Events") {
-         statusPar = "N/A";
-       } else {
-         statusPar = "Pending";
-       }
+      // Standard Sequential Flow
+      statusCoun = "Pending";
+      statusTea = "Pending";
+      statusHod = "Pending";
+      if (isHosteler) statusWar = "Pending";
+      if (category === "Campus Events" || category === "Off-Campus Events") {
+        statusPar = "N/A";
+      } else {
+        statusPar = "Pending";
+      }
     }
 
     const insertResult = await pool.query(
@@ -300,14 +300,16 @@ app.post("/permissions/request", upload.single("attachment"), async (req, res) =
       try {
         const { generateOTP, sendOtpEmail } = require("./utils/otpUtils");
         const otpDb = require("./db/parentOtpQueries");
-
         const student = await otpDb.getStudentWithParent(pool, student_id);
+
         if (student && student.parent_email) {
           const otp = generateOTP();
           const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
           await otpDb.createOtpRecord(pool, student_id, newPermId, student.parent_email, otp, expiresAt);
-          await sendOtpEmail(student.parent_email, otp, student.name, category);
-          console.log(`[OTP] Auto-sent to ${student.parent_email} for permission ${newPermId}`);
+          
+          // Send Gmail in background (Non-blocking)
+          sendOtpEmail(student.parent_email, otp, student.name, category).catch(e => console.error("[Background Email Error] Parent OTP:", e.message));
+          console.log(`[Email] Triggered background OTP for ${student.parent_email}`);
         }
       } catch (otpErr) {
         // OTP send failure should not block permission creation
@@ -315,22 +317,31 @@ app.post("/permissions/request", upload.single("attachment"), async (req, res) =
       }
     }
 
-    // Notify Counselor via Email
+    // --- REAL EMAIL NOTIFICATIONS (BACKGROUND) ---
+    const { sendFacultyNotificationEmail } = require("./utils/otpUtils");
+    
+    // 1. Notify Counselor (Immediate Action Required)
     if (statusCoun === "Pending" && studentData.c_email) {
-      try {
-        const { sendFacultyNotificationEmail } = require("./utils/otpUtils");
-        await sendFacultyNotificationEmail(studentData.c_email, `[SPMS] New Request: ${studentData.name}`, {
-          studentName: studentData.name,
-          rollNo: studentData.roll_no,
-          category,
-          reason,
-          actionMsg: `A new ${priority} permission request has been submitted and is awaiting your Counselor approval.`
-        });
-      } catch (err) {
-        console.error("[Email] Counselor notification failed:", err.message);
-      }
+      sendFacultyNotificationEmail(studentData.c_email, `[SPMS] New Request: ${studentData.name}`, {
+        studentName: studentData.name, rollNo: studentData.roll_no, category, reason,
+        actionMsg: `A new ${priority} permission request has been submitted and is awaiting your Counselor approval.`
+      }).catch(err => console.error("[Background Email Error] Counselor:", err.message));
     }
 
+    // 2. Notify Class Teacher & HOD (For Awareness/Visibility)
+    const extraNotify = [
+      { email: studentData.t_email, role: "Class Teacher" },
+      { email: studentData.h_email, role: "HOD" }
+    ];
+
+    for (const f of extraNotify) {
+      if (f.email) {
+        sendFacultyNotificationEmail(f.email, `[SPMS] New Student Request: ${studentData.name}`, {
+          studentName: studentData.name, rollNo: studentData.roll_no, category, reason,
+          actionMsg: `Note: A new ${priority} request has been submitted. It is currently in the Counselor's queue, but will reach you soon for approval.`
+        }).catch(err => console.error(`[Background Email Error] ${f.role}:`, err.message));
+      }
+    }
     res.json({ success: true, autoApproved: isShortOuting, permission_id: newPermId });
   } catch (err) {
     console.error(err);
@@ -339,7 +350,7 @@ app.post("/permissions/request", upload.single("attachment"), async (req, res) =
 });
 
 app.get("/permissions", async (req, res) => {
-  const { role, id, view } = req.query; 
+  const { role, id, view } = req.query;
 
   try {
     let queryStr = `
@@ -350,11 +361,11 @@ app.get("/permissions", async (req, res) => {
     let values = [];
 
     if (role === 'student') {
-       queryStr += ` WHERE p.student_id = $1 ORDER BY p.created_at DESC`;
-       values = [id];
+      queryStr += ` WHERE p.student_id = $1 ORDER BY p.created_at DESC`;
+      values = [id];
     } else if (role === 'faculty') {
-       if (view === 'history') {
-         queryStr = `
+      if (view === 'history') {
+        queryStr = `
            SELECT p.*, u.name, u.attendance, u.residence_type,
                   CASE 
                     WHEN u.counselor_id = $1 THEN 'counselor'
@@ -367,9 +378,9 @@ app.get("/permissions", async (req, res) => {
              AND (p.status_counselor != 'Pending' OR p.status_class_teacher != 'Pending' OR p.status_hod != 'Pending')
            ORDER BY p.created_at DESC
          `;
-         values = [id];
-       } else {
-         queryStr = `
+        values = [id];
+      } else {
+        queryStr = `
            SELECT p.*, u.name, u.attendance, u.residence_type,
                   CASE 
                     WHEN u.counselor_id = $1 THEN 'counselor'
@@ -387,24 +398,24 @@ app.get("/permissions", async (req, res) => {
            )
            ORDER BY p.priority DESC, p.created_at DESC
          `;
-         values = [id];
-       }
+        values = [id];
+      }
     } else if (role === 'warden') {
-       if (view === 'history') {
-         queryStr += ` WHERE p.status_warden != 'Pending'`;
-       } else {
-         queryStr += ` WHERE p.status_warden = 'Pending' AND p.status_hod = 'Approved'`;
-       }
-       queryStr += ` ORDER BY p.priority DESC, p.created_at DESC`;
+      if (view === 'history') {
+        queryStr += ` WHERE p.status_warden != 'Pending'`;
+      } else {
+        queryStr += ` WHERE p.status_warden = 'Pending' AND p.status_hod = 'Approved'`;
+      }
+      queryStr += ` ORDER BY p.priority DESC, p.created_at DESC`;
     } else if (role === 'parent') {
-       if (view === 'history') {
-         queryStr += ` WHERE p.status_parent != 'Pending' AND p.student_id = (SELECT id FROM users WHERE UPPER(roll_no) = UPPER($1) LIMIT 1) ORDER BY p.created_at DESC`;
-       } else {
-         queryStr += ` WHERE p.status_parent = 'Pending' AND p.student_id = (SELECT id FROM users WHERE UPPER(roll_no) = UPPER($1) LIMIT 1) ORDER BY p.created_at DESC`;
-       }
-       values = [id]; 
+      if (view === 'history') {
+        queryStr += ` WHERE p.status_parent != 'Pending' AND p.student_id = (SELECT id FROM users WHERE UPPER(roll_no) = UPPER($1) LIMIT 1) ORDER BY p.created_at DESC`;
+      } else {
+        queryStr += ` WHERE p.status_parent = 'Pending' AND p.student_id = (SELECT id FROM users WHERE UPPER(roll_no) = UPPER($1) LIMIT 1) ORDER BY p.created_at DESC`;
+      }
+      values = [id];
     } else if (role === 'admin') {
-       queryStr += ` ORDER BY p.created_at DESC`;
+      queryStr += ` ORDER BY p.created_at DESC`;
     }
 
     const requests = await pool.query(queryStr, values);
@@ -417,152 +428,181 @@ app.get("/permissions", async (req, res) => {
 
 app.put("/permissions/:id", async (req, res) => {
   const permId = req.params.id;
-  const { role, sub_role, action, name, hod_id } = req.body; 
+  const { role, sub_role, action, name, hod_id } = req.body;
   try {
-     const permRes = await pool.query("SELECT * FROM permissions WHERE id=$1", [permId]);
-     if (permRes.rows.length === 0) return res.json({ success: false });
-     const p = permRes.rows[0];
+    const permRes = await pool.query("SELECT * FROM permissions WHERE id=$1", [permId]);
+    if (permRes.rows.length === 0) return res.json({ success: false });
+    const p = permRes.rows[0];
 
-     let q = "UPDATE permissions SET ";
-     let vals = [];
-     let idx = 1;
+    let q = "UPDATE permissions SET ";
+    let vals = [];
+    let idx = 1;
 
-     if (action === 'Rejected') {
-        let statusCol = "";
-        if (sub_role === 'counselor') statusCol = "status_counselor";
-        else if (sub_role === 'class_teacher') statusCol = "status_class_teacher";
-        else if (sub_role === 'hod') statusCol = "status_hod";
-        else if (role === 'warden') statusCol = "status_warden";
-        else if (role === 'parent') statusCol = "status_parent";
+    if (action === 'Rejected') {
+      let statusCol = "";
+      if (sub_role === 'counselor') statusCol = "status_counselor";
+      else if (sub_role === 'class_teacher') statusCol = "status_class_teacher";
+      else if (sub_role === 'hod') statusCol = "status_hod";
+      else if (role === 'warden') statusCol = "status_warden";
+      else if (role === 'parent') statusCol = "status_parent";
 
-        q += `final_status='Rejected', ${statusCol}='Rejected', rejected_by=$${idx++} WHERE id=$${idx}`;
+      q += `final_status='Rejected', ${statusCol}='Rejected', rejected_by=$${idx++} WHERE id=$${idx}`;
+      vals.push(name, permId);
+    } else {
+      // Approval Logic with Sequential Check
+      if (sub_role === 'counselor') {
+        q += `status_counselor='Approved', c_name=$${idx++}, c_approved_at=NOW(), status_class_teacher='Pending' WHERE id=$${idx}`;
         vals.push(name, permId);
-     } else {
-        // Approval Logic with Sequential Check
-        if (sub_role === 'counselor') {
-           q += `status_counselor='Approved', c_name=$${idx++}, c_approved_at=NOW(), status_class_teacher='Pending' WHERE id=$${idx}`;
-           vals.push(name, permId);
-        } else if (sub_role === 'class_teacher') {
-           const timeDiffSinceCreation = (Date.now() - new Date(p.created_at).getTime()) / (60 * 1000);
-           const canBypassCounselor = p.status_counselor === 'Approved' || p.priority === 'Urgent' || timeDiffSinceCreation >= 30;
+      } else if (sub_role === 'class_teacher') {
+        const timeDiffSinceCreation = (Date.now() - new Date(p.created_at).getTime()) / (60 * 1000);
+        const canBypassCounselor = p.status_counselor === 'Approved' || p.priority === 'Urgent' || timeDiffSinceCreation >= 30;
 
-           if (!canBypassCounselor) {
-              return res.json({ success: false, message: "Awaiting Counselor approval (30 min limit not reached)" });
-           }
+        if (!canBypassCounselor) {
+          return res.json({ success: false, message: "Awaiting Counselor approval (30 min limit not reached)" });
+        }
 
-           q += `status_class_teacher='Approved', t_name=${idx++}, t_approved_at=NOW(), status_hod='Pending', ` +
-                `status_counselor=CASE WHEN status_counselor='Pending' THEN 'Bypassed' ELSE status_counselor END ` +
-                `WHERE id=${idx}`;
-           vals.push(name, permId);
-        } else if (sub_role === 'hod') {
-           const timeDiffSinceCreation = (Date.now() - new Date(p.created_at).getTime()) / (60 * 1000);
-           const timeDiffSinceCounselor = p.c_approved_at ? (Date.now() - new Date(p.c_approved_at).getTime()) / (60 * 1000) : 0;
-           
-           const isEmergency = p.priority === 'Urgent';
-           const normalQueueReady = p.status_class_teacher === 'Approved';
-           const canBypassTeacher = normalQueueReady || isEmergency || timeDiffSinceCreation >= 60 || (p.status_counselor === 'Approved' && timeDiffSinceCounselor >= 30);
+        q += `status_class_teacher='Approved', t_name=$${idx++}, t_approved_at=NOW(), status_hod='Pending', ` +
+          `status_counselor=CASE WHEN status_counselor='Pending' THEN 'Bypassed' ELSE status_counselor END ` +
+          `WHERE id=$${idx}`;
+        vals.push(name, permId);
+      } else if (sub_role === 'hod') {
+        const timeDiffSinceCreation = (Date.now() - new Date(p.created_at).getTime()) / (60 * 1000);
+        const timeDiffSinceCounselor = p.c_approved_at ? (Date.now() - new Date(p.c_approved_at).getTime()) / (60 * 1000) : 0;
 
-           if (!canBypassTeacher) {
-             return res.json({ success: false, message: "Awaiting Class Teacher approval (Time limit not reached)" });
-           }
+        const isEmergency = p.priority === 'Urgent';
+        const normalQueueReady = p.status_class_teacher === 'Approved';
+        const canBypassTeacher = normalQueueReady || isEmergency || timeDiffSinceCreation >= 60 || (p.status_counselor === 'Approved' && timeDiffSinceCounselor >= 30);
 
-           if (!normalQueueReady) {
-             // HOD EMERGENCY BYPASS: mark counselor & class_teacher as bypassed
-             q += `status_hod='Approved', h_name=$${idx++}, h_approved_at=NOW(), hod_bypass=TRUE, ` +
-                  `status_counselor=CASE WHEN status_counselor='Pending' THEN 'Bypassed' ELSE status_counselor END, ` +
-                  `status_class_teacher=CASE WHEN status_class_teacher='Pending' THEN 'Bypassed' ELSE status_class_teacher END ` +
-                  `WHERE id=$${idx}`;
-             vals.push(name, permId);
+        if (!canBypassTeacher) {
+          return res.json({ success: false, message: "Awaiting Class Teacher approval (Time limit not reached)" });
+        }
 
-             await pool.query(q, vals);
+        if (!normalQueueReady) {
+          // HOD EMERGENCY BYPASS: mark counselor & class_teacher as bypassed
+          q += `status_hod='Approved', h_name=$${idx++}, h_approved_at=NOW(), hod_bypass=TRUE, ` +
+            `status_counselor=CASE WHEN status_counselor='Pending' THEN 'Bypassed' ELSE status_counselor END, ` +
+            `status_class_teacher=CASE WHEN status_class_teacher='Pending' THEN 'Bypassed' ELSE status_class_teacher END ` +
+            `WHERE id=$${idx}`;
+          vals.push(name, permId);
 
-             // Send notifications to counselor and class teacher about HOD bypass
-             try {
-               // Get student details
-               const studentInfo = await pool.query(
-                 `SELECT u.name, u.roll_no, u.counselor_id, u.class_teacher_id
+          await pool.query(q, vals);
+
+          // Send notifications to counselor and class teacher about HOD bypass
+          try {
+            // Get student details
+            const studentInfo = await pool.query(
+              `SELECT u.name, u.roll_no, u.counselor_id, u.class_teacher_id
                   FROM users u WHERE u.id = $1`, [p.student_id]
-               );
-               const si = studentInfo.rows[0];
-               const msg = `🚨 HOD Emergency Bypass: ${name} directly approved an URGENT leave for student ${si.name} (${si.roll_no}). Your approval was bypassed for emergency. Category: ${p.category}. Reason: "${p.reason.substring(0, 80)}..."` ;
-               if (si.counselor_id) {
-                 await pool.query(
-                   `INSERT INTO faculty_notifications (faculty_id, permission_id, message) VALUES ($1, $2, $3)`,
-                   [si.counselor_id, permId, msg]
-                 );
-               }
-               if (si.teacher_id) {
-                 await pool.query(
-                   `INSERT INTO faculty_notifications (faculty_id, permission_id, message) VALUES ($1, $2, $3)`,
-                   [si.teacher_id, permId, msg]
-                 );
-               }
-             } catch (notifErr) {
-               console.error("[Notification] Failed to create bypass notifications:", notifErr.message);
-             }
+            );
+            const si = studentInfo.rows[0];
+            const msg = `🚨 HOD Emergency Bypass: ${name} directly approved an URGENT leave for student ${si.name} (${si.roll_no}). Your approval was bypassed for emergency. Category: ${p.category}. Reason: "${p.reason.substring(0, 80)}..."`;
+            if (si.counselor_id) {
+              await pool.query(
+                `INSERT INTO faculty_notifications (faculty_id, permission_id, message) VALUES ($1, $2, $3)`,
+                [si.counselor_id, permId, msg]
+              );
+            }
+            if (si.teacher_id) {
+              await pool.query(
+                `INSERT INTO faculty_notifications (faculty_id, permission_id, message) VALUES ($1, $2, $3)`,
+                [si.teacher_id, permId, msg]
+              );
+            }
+          } catch (notifErr) {
+            console.error("[Notification] Failed to create bypass notifications:", notifErr.message);
+          }
 
-             // Check final approval after bypass
-             const check2 = await pool.query("SELECT * FROM permissions WHERE id=$1", [permId]);
-             const up2 = check2.rows[0];
-             if (up2.final_status === 'Pending') {
-               const cOk = ['N/A','Approved','Bypassed'].includes(up2.status_counselor);
-               const tOk = ['N/A','Approved','Bypassed'].includes(up2.status_class_teacher);
-               const hOk = up2.status_hod === 'Approved';
-               const wOk = ['N/A','Approved'].includes(up2.status_warden);
-               const pOk = ['N/A','Approved'].includes(up2.status_parent);
-               if (cOk && tOk && hOk && wOk && pOk) {
-                 await pool.query("UPDATE permissions SET final_status='Approved' WHERE id=$1", [permId]);
-               }
-             }
-             return res.json({ success: true, bypassed: true });
-           }
-
-           // Normal HOD approval (queue was ready)
-           q += `status_hod='Approved', h_name=$${idx++}, h_approved_at=NOW() WHERE id=$${idx}`;
-           vals.push(name, permId);
-        } else if (role === 'warden') {
-           if (p.status_hod !== 'Approved') return res.json({ success: false, message: "Awaiting HOD approval" });
-           q += `status_warden='Approved', w_name=$${idx++}, w_approved_at=NOW() WHERE id=$${idx}`;
-           vals.push(name, permId);
-        } else if (role === 'parent') {
-           q += `status_parent='Approved', parent_name=$${idx++} WHERE id=$${idx}`;
-           vals.push(name || 'Parent', permId);
+          // Check final approval after bypass
+          const check2 = await pool.query("SELECT * FROM permissions WHERE id=$1", [permId]);
+          const up2 = check2.rows[0];
+          if (up2.final_status === 'Pending') {
+            const cOk = ['N/A', 'Approved', 'Bypassed'].includes(up2.status_counselor);
+            const tOk = ['N/A', 'Approved', 'Bypassed'].includes(up2.status_class_teacher);
+            const hOk = up2.status_hod === 'Approved';
+            const wOk = ['N/A', 'Approved'].includes(up2.status_warden);
+            const pOk = ['N/A', 'Approved'].includes(up2.status_parent);
+            if (cOk && tOk && hOk && wOk && pOk) {
+              await pool.query("UPDATE permissions SET final_status='Approved' WHERE id=$1", [permId]);
+            }
+          }
+          return res.json({ success: true, bypassed: true });
         }
-     }
 
-     await pool.query(q, vals);
-     await triggerNextEmail(permId);
+        // Normal HOD approval (queue was ready)
+        q += `status_hod='Approved', h_name=$${idx++}, h_approved_at=NOW() WHERE id=$${idx}`;
+        vals.push(name, permId);
+      } else if (role === 'warden') {
+        if (p.status_hod !== 'Approved') return res.json({ success: false, message: "Awaiting HOD approval" });
+        q += `status_warden='Approved', w_name=$${idx++}, w_approved_at=NOW() WHERE id=$${idx}`;
+        vals.push(name, permId);
+      } else if (role === 'parent') {
+        q += `status_parent='Approved', parent_name=$${idx++} WHERE id=$${idx}`;
+        vals.push(name || 'Parent', permId);
+      }
+    }
 
-     // Check if Final Approval is reached
-     const check = await pool.query("SELECT * FROM permissions WHERE id=$1", [permId]);
-     const up = check.rows[0];
-     if (up.final_status === 'Pending') {
-        const cOk = ['N/A','Approved','Bypassed'].includes(up.status_counselor);
-        const tOk = ['N/A','Approved','Bypassed'].includes(up.status_class_teacher);
-        const hOk = (up.status_hod === 'N/A' || up.status_hod === 'Approved');
-        const wOk = (up.status_warden === 'N/A' || up.status_warden === 'Approved');
-        const pOk = (up.status_parent === 'N/A' || up.status_parent === 'Approved');
-        if (cOk && tOk && hOk && wOk && pOk) {
-           await pool.query("UPDATE permissions SET final_status='Approved' WHERE id=$1", [permId]);
-        }
-     }
+    await pool.query(q, vals);
+    await triggerNextEmail(permId);
 
-     res.json({ success: true });
+    // --- REAL EMAIL: Notify Student of Action ---
+    try {
+      const { sendStatusNotificationEmail } = require("./utils/otpUtils");
+      const studentRes = await pool.query("SELECT email, name FROM users WHERE id=$1", [p.student_id]);
+      if (studentRes.rows[0]?.email) {
+        await sendStatusNotificationEmail(studentRes.rows[0].email, `[SPMS] Request Update`, {
+          studentName: studentRes.rows[0].name,
+          category: p.category,
+          status: action === 'Rejected' ? 'Rejected' : 'Approved',
+          approverName: name || role
+        });
+        console.log(`[Email] Status update sent to student: ${studentRes.rows[0].email}`);
+      }
+    } catch (err) { console.error("[Email Status Error]:", err.message); }
+
+    // Check if Final Approval is reached
+    const check = await pool.query("SELECT * FROM permissions WHERE id=$1", [permId]);
+    const up = check.rows[0];
+    if (up.final_status === 'Pending') {
+      const cOk = ['N/A', 'Approved', 'Bypassed'].includes(up.status_counselor);
+      const tOk = ['N/A', 'Approved', 'Bypassed'].includes(up.status_class_teacher);
+      const hOk = (up.status_hod === 'N/A' || up.status_hod === 'Approved');
+      const wOk = (up.status_warden === 'N/A' || up.status_warden === 'Approved');
+      const pOk = (up.status_parent === 'N/A' || up.status_parent === 'Approved');
+      if (cOk && tOk && hOk && wOk && pOk) {
+        await pool.query("UPDATE permissions SET final_status='Approved' WHERE id=$1", [permId]);
+        
+        // Final Approval Notification
+        try {
+          const { sendStatusNotificationEmail } = require("./utils/otpUtils");
+          const studentRes = await pool.query("SELECT email, name FROM users WHERE id=$1", [p.student_id]);
+          if (studentRes.rows[0]?.email) {
+            await sendStatusNotificationEmail(studentRes.rows[0].email, `[SPMS] Final Approval Success!`, {
+              studentName: studentRes.rows[0].name,
+              category: p.category,
+              status: "FULLY APPROVED",
+              approverName: "All Authorities"
+            });
+          }
+        } catch (e) {}
+      }
+    }
+
+    res.json({ success: true });
   } catch (err) {
-     console.error(err);
-     res.status(500).json({ success: false });
+    console.error(err);
+    res.status(500).json({ success: false });
   }
 });
 
 app.put("/permissions/:id/escalate", async (req, res) => {
   const permId = req.params.id;
   try {
-     await pool.query("UPDATE permissions SET priority='Urgent' WHERE id=$1", [permId]);
-     await triggerNextEmail(permId);
-     res.json({ success: true, message: "Request escalated successfully" });
+    await pool.query("UPDATE permissions SET priority='Urgent' WHERE id=$1", [permId]);
+    await triggerNextEmail(permId);
+    res.json({ success: true, message: "Request escalated successfully" });
   } catch (err) {
-     console.error(err);
-     res.status(500).json({ success: false });
+    console.error(err);
+    res.status(500).json({ success: false });
   }
 });
 
@@ -648,13 +688,13 @@ app.post("/parent/resend-otp", async (req, res) => {
 
     const otp = generateOTP();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
-    
+
     // Invalidate old and create new
     await otpDb.invalidatePreviousOtps(pool, student_id, permission_id);
     await otpDb.createOtpRecord(pool, student_id, permission_id, student.parent_email, otp, expiresAt);
-    
+
     await sendOtpEmail(student.parent_email, otp, student.name);
-    
+
     res.json({ success: true, message: "New OTP sent to email! 📩" });
   } catch (err) {
     console.error(err);
@@ -674,7 +714,7 @@ app.post("/parent/verify-otp", async (req, res) => {
 
     // Mark verified
     await otpDb.markOtpVerified(pool, validOtp.id);
-    
+
     // Update permission status
     await otpDb.updatePermissionParentStatus(pool, permission_id, "Approved");
     await otpDb.checkAndUpdateFinalStatus(pool, permission_id);
