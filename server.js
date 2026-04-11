@@ -151,6 +151,29 @@ app.post("/login", async (req, res) => {
   }
 });
 
+// ================= DIAGNOSTIC TEST ROUTE =================
+app.get("/test-system-email", async (req, res) => {
+  const { sendRegistrationOtpEmail } = require("./utils/otpUtils");
+  const testTarget = req.query.to || process.env.EMAIL_USER;
+  
+  try {
+    console.log(`[Diagnostic] Triggering test email to: ${testTarget}`);
+    const result = await sendRegistrationOtpEmail(testTarget, "TEST-99");
+    res.json({ 
+      success: true, 
+      message: `Test email sent successfully to ${testTarget}! Check your inbox and spam folder.`,
+      messageId: result.messageId
+    });
+  } catch (err) {
+    console.error("[Diagnostic Error]:", err.message);
+    res.status(500).json({ 
+      success: false, 
+      error: err.message,
+      help: "Check your EMAIL_USER and EMAIL_PASS environment variables."
+    });
+  }
+});
+
 // ================= FACULTY LIST (FOR REGISTRATION) =================
 app.get("/faculty-list", async (req, res) => {
   try {
