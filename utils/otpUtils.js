@@ -40,21 +40,22 @@ function getTransporter() {
   console.log(`[Email Debug] EMAIL_PASS is ${process.env.EMAIL_PASS ? "DEFINED (" + process.env.EMAIL_PASS.length + " chars)" : "MISSING"}`);
 
   transporterInstance = nodemailer.createTransport({
-    host: "192.178.211.108", // Hardcoded IPv4 for smtp.gmail.com
-    port: 587,
-    secure: false, 
+    host: "74.125.130.108", // Force specific Gmail IPv4
+    port: 465,
+    secure: true, 
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
+    // SSL logic forcing via family: 4
+    family: 4,
     tls: {
-      // Must match original hostname for certificate verification
       servername: 'smtp.gmail.com',
       rejectUnauthorized: false
     },
-    connectionTimeout: 40000, 
-    greetingTimeout: 40000,
-    socketTimeout: 40000,
+    connectionTimeout: 60000, 
+    greetingTimeout: 60000,
+    socketTimeout: 60000,
   });
 
   return transporterInstance;
