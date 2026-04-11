@@ -36,19 +36,25 @@ function getTransporter() {
   if (transporterInstance) return transporterInstance;
 
   console.log("[Email] Initializing global transporter instance...");
+  console.log(`[Email Debug] EMAIL_USER is ${process.env.EMAIL_USER ? "DEFINED" : "MISSING"}`);
+  console.log(`[Email Debug] EMAIL_PASS is ${process.env.EMAIL_PASS ? "DEFINED (" + process.env.EMAIL_PASS.length + " chars)" : "MISSING"}`);
+
   transporterInstance = nodemailer.createTransport({
-    host: "smtp.gmail.com",
+    host: "192.178.211.108", // Hardcoded IPv4 for smtp.gmail.com
     port: 587,
-    secure: false, // Use STARTTLS
+    secure: false, 
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
-    // Force IPv4 (family: 4) to bypass Render's IPv6 networking issues
-    family: 4,
-    connectionTimeout: 30000, 
-    greetingTimeout: 30000,
-    socketTimeout: 30000,
+    tls: {
+      // Must match original hostname for certificate verification
+      servername: 'smtp.gmail.com',
+      rejectUnauthorized: false
+    },
+    connectionTimeout: 40000, 
+    greetingTimeout: 40000,
+    socketTimeout: 40000,
   });
 
   return transporterInstance;
