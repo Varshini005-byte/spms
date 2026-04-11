@@ -347,10 +347,19 @@ app.get("/permissions", async (req, res) => {
             queryStr += ` WHERE p.status_counselor = 'Pending' AND p.student_id IN (SELECT id FROM users WHERE counselor_id=$1)`;
             values = [id];
          } else if (subRole === 'class_teacher') {
-            queryStr += ` WHERE p.status_class_teacher = 'Pending' AND (p.status_counselor = 'Approved' OR p.hod_bypass = TRUE) AND p.student_id IN (SELECT id FROM users WHERE class_teacher_id=$1)`;
+            // Show if it's Teacher's turn OR (30 mins passed OR Urgent)
+            queryStr += ` WHERE p.status_class_teacher = 'Pending' 
+                         AND (p.status_counselor = 'Approved' OR p.priority = 'Urgent' OR p.created_at < NOW() - INTERVAL '30 minutes') 
+                         AND p.student_id IN (SELECT id FROM users WHERE class_teacher_id=$1)`;
             values = [id];
          } else if (subRole === 'hod') {
-            queryStr += ` WHERE p.status_hod = 'Pending' AND (p.status_class_teacher = 'Approved' OR (p.priority = 'Urgent' AND p.final_status = 'Pending')) AND p.student_id IN (SELECT id FROM users WHERE hod_id=$1)`;
+            // Show if it's HOD's turn OR (60 mins passed OR (Coun Approved + 30m) OR Urgent)
+            queryStr += ` WHERE p.status_hod = 'Pending' 
+                         AND (p.status_class_teacher = 'Approved' 
+                              OR p.priority = 'Urgent' 
+                              OR p.created_at < NOW() - INTERVAL '60 minutes'
+                              OR (p.status_counselor = 'Approved' AND p.c_approved_at < NOW() - INTERVAL '30 minutes'))
+                         AND p.student_id IN (SELECT id FROM users WHERE hod_id=$1)`;
             values = [id];
          }
        }
@@ -409,19 +418,30 @@ app.put("/permissions/:id", async (req, res) => {
            q += `status_counselor='Approved', c_name=$${idx++}, c_approved_at=NOW(), status_class_teacher='Pending' WHERE id=$${idx}`;
            vals.push(name, permId);
         } else if (sub_role === 'class_teacher') {
-           if (p.status_counselor !== 'Approved' && !p.hod_bypass) return res.json({ success: false, message: "Awaiting Counselor approval" });
-           q += `status_class_teacher='Approved', t_name=$${idx++}, t_approved_at=NOW(), status_hod='Pending' WHERE id=$${idx}`;
-           vals.push(name, permId);
-        } else if (sub_role === 'hod') {
-           // HOD can bypass if leave is Urgent/Emergency
-           const isEmergency = p.priority === 'Urgent';
-           const normalQueueReady = p.status_class_teacher === 'Approved';
+           const timeDiffSinceCreation = (Date.now() - new Date(p.created_at).getTime()) / (60 * 1000);
+           const canBypassCounselor = p.status_counselor === 'Approved' || p.priority === 'Urgent' || timeDiffSinceCreation >= 30;
 
-           if (!normalQueueReady && !isEmergency) {
-             return res.json({ success: false, message: "Awaiting Class Teacher approval" });
+           if (!canBypassCounselor) {
+              return res.json({ success: false, message: "Awaiting Counselor approval (30 min limit not reached)" });
            }
 
-           if (isEmergency && !normalQueueReady) {
+           q += `status_class_teacher='Approved', t_name=${idx++}, t_approved_at=NOW(), status_hod='Pending', ` +
+                `status_counselor=CASE WHEN status_counselor='Pending' THEN 'Bypassed' ELSE status_counselor END ` +
+                `WHERE id=${idx}`;
+           vals.push(name, permId);
+        } else if (sub_role === 'hod') {
+           const timeDiffSinceCreation = (Date.now() - new Date(p.created_at).getTime()) / (60 * 1000);
+           const timeDiffSinceCounselor = p.c_approved_at ? (Date.now() - new Date(p.c_approved_at).getTime()) / (60 * 1000) : 0;
+           
+           const isEmergency = p.priority === 'Urgent';
+           const normalQueueReady = p.status_class_teacher === 'Approved';
+           const canBypassTeacher = normalQueueReady || isEmergency || timeDiffSinceCreation >= 60 || (p.status_counselor === 'Approved' && timeDiffSinceCounselor >= 30);
+
+           if (!canBypassTeacher) {
+             return res.json({ success: false, message: "Awaiting Class Teacher approval (Time limit not reached)" });
+           }
+
+           if (!normalQueueReady) {
              // HOD EMERGENCY BYPASS: mark counselor & class_teacher as bypassed
              q += `status_hod='Approved', h_name=$${idx++}, h_approved_at=NOW(), hod_bypass=TRUE, ` +
                   `status_counselor=CASE WHEN status_counselor='Pending' THEN 'Bypassed' ELSE status_counselor END, ` +

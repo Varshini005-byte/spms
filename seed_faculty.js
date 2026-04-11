@@ -13,22 +13,31 @@ const pool = new Pool({ connectionString: process.env.DB_URL, ssl: { rejectUnaut
 
 const newFaculty = [
   {
-    name: "Lakshmi Priya",
-    email: "classteacher@spms.ac.in",
-    faculty_id: "FAC_TEA01",
+    name: "Sunitha",
+    email: "sunitha@spms.ac.in",
+    faculty_id: "24A551",
     phone_no: "9000000001",
     role: "faculty",
-    sub_role: "class_teacher",
-    password: "teacher123",
+    sub_role: "counselor",
+    password: "password123",
   },
   {
-    name: "Dr. Ramesh HOD",
-    email: "hod@spms.ac.in",
-    faculty_id: "FAC_HOD01",
+    name: "Vikranth",
+    email: "vikranth@spms.ac.in",
+    faculty_id: "24A531",
     phone_no: "9000000002",
     role: "faculty",
+    sub_role: "class_teacher",
+    password: "password123",
+  },
+  {
+    name: "Raghavender",
+    email: "raghavender@spms.ac.in",
+    faculty_id: "24A532",
+    phone_no: "9000000003",
+    role: "faculty",
     sub_role: "hod",
-    password: "hod123456",
+    password: "password123",
   },
 ];
 
